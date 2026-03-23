@@ -219,6 +219,34 @@ body{font-family:'Nunito',sans-serif;background:linear-gradient(180deg,#8de4ec 0
 .pin-setup-row input:focus{border-color:var(--sky)}
 .empty-state{text-align:center;padding:48px 20px;color:var(--muted);font-size:15px}
 .empty-state .es-icon{font-size:48px;margin-bottom:12px}
+/* ── ADVENTURE ── */
+.adv-hero{background:linear-gradient(160deg,#1a6b3a 0%,var(--meadow2) 45%,var(--sky) 100%);padding:52px 20px 20px;color:#fff;text-align:center}
+.adv-hero h2{font-family:'Lora',serif;font-size:20px;font-weight:700}
+.adv-hero .sub{font-size:13px;opacity:.85;margin-top:4px}
+.adv-progress-bar{background:rgba(255,255,255,.25);border-radius:20px;height:8px;margin:12px 0 4px;overflow:hidden}
+.adv-progress-fill{background:#fff;height:100%;border-radius:20px;transition:width .5s ease}
+.adv-world{margin:14px 16px 0}
+.adv-world-label{font-size:11px;font-weight:800;color:var(--sky2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px}
+.adv-world-card{background:var(--cream);border-radius:18px;padding:16px 12px;border:1.5px solid var(--border);box-shadow:var(--shadow-sm)}
+.adv-stages-row{display:flex;align-items:center}
+.adv-connector{flex:1;height:4px;background:var(--border);border-radius:2px;margin:0 4px;margin-bottom:20px}
+.adv-connector.done{background:var(--meadow)}
+.adv-stage-node{display:flex;flex-direction:column;align-items:center;gap:3px;flex-shrink:0}
+.adv-node-btn{width:64px;height:64px;border-radius:50%;border:3px solid var(--border);background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;box-shadow:var(--shadow-sm)}
+.adv-node-btn.unlocked{border-color:var(--meadow);background:#fff;box-shadow:0 0 0 5px rgba(110,203,99,.18)}
+.adv-node-btn.current{border-color:var(--sky);background:#fff;animation:advPulse 1.8s infinite}
+.adv-node-btn.locked{opacity:.4;cursor:default;pointer-events:none}
+.adv-node-num{font-size:14px;font-weight:900;color:var(--text);line-height:1}
+.adv-node-icon{font-size:16px;line-height:1}
+.adv-node-stars{font-size:11px;color:var(--sun);height:14px;letter-spacing:1px}
+.adv-node-pct{font-size:10px;color:var(--muted);font-weight:700;height:13px}
+@keyframes advPulse{0%,100%{box-shadow:0 0 0 5px rgba(91,200,212,.2)}50%{box-shadow:0 0 0 10px rgba(91,200,212,.05)}}
+.adv-home-card{margin:8px 16px 0;background:linear-gradient(135deg,#1b6b40,var(--sky2));border-radius:18px;padding:15px 18px;cursor:pointer;display:flex;align-items:center;gap:14px;box-shadow:0 4px 18px rgba(30,120,80,.25);border:none;width:100%;text-align:left}
+.adv-home-card:active{opacity:.85}
+.adv-home-icon{font-size:34px;flex-shrink:0}
+.adv-home-text .adv-card-title{font-size:15px;font-weight:900;color:#fff}
+.adv-home-text .adv-card-sub{font-size:12px;color:rgba(255,255,255,.8);margin-top:2px}
+.adv-chevron{margin-left:auto;color:rgba(255,255,255,.6);font-size:20px;flex-shrink:0}
 </style>
 </head>
 <body>
@@ -279,6 +307,14 @@ body{font-family:'Nunito',sans-serif;background:linear-gradient(180deg,#8de4ec 0
       <button class="btn btn-primary" style="margin-top:16px" onclick="startQuiz()">Start Quiz 📝</button>
     </div>
   </div>
+  <button class="adv-home-card" onclick="showScreen('screen-adventure')">
+    <div class="adv-home-icon">🗺️</div>
+    <div class="adv-home-text">
+      <div class="adv-card-title">Adventure Mode</div>
+      <div class="adv-card-sub" id="adv-home-sub">Begin your vocabulary adventure!</div>
+    </div>
+    <div class="adv-chevron">›</div>
+  </button>
   <div class="card tip-card" id="wotd-card" style="margin-top:4px">
     <div style="font-size:11px;font-weight:800;color:var(--primary);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">✨ Word of the Day</div>
     <div class="tip-word" id="wotd-word">—</div>
@@ -294,7 +330,7 @@ body{font-family:'Nunito',sans-serif;background:linear-gradient(180deg,#8de4ec 0
     <div class="quiz-progress-row">
       <div class="quiz-progress-label" id="quiz-qnum">1 / 10</div>
       <div class="quiz-progress-track"><div class="quiz-progress-fill" id="quiz-progress-fill" style="width:10%"></div></div>
-      <button onclick="showScreen('screen-home')" style="background:rgba(255,255,255,.15);border:none;color:#fff;font-size:18px;padding:4px 8px;border-radius:8px;cursor:pointer">✕</button>
+      <button onclick="exitQuiz()" style="background:rgba(255,255,255,.15);border:none;color:#fff;font-size:18px;padding:4px 8px;border-radius:8px;cursor:pointer">✕</button>
     </div>
     <div class="quiz-type-tag" id="quiz-type-tag">Definition</div>
   </div>
@@ -322,10 +358,24 @@ body{font-family:'Nunito',sans-serif;background:linear-gradient(180deg,#8de4ec 0
   <div class="score-big" id="score-big">0</div>
   <div class="score-denom" id="score-denom">out of 10</div>
   <div class="score-subtitle" id="score-subtitle">—</div>
-  <div class="score-actions">
+  <div class="score-actions" id="normal-score-actions">
     <button class="btn btn-primary" onclick="startQuiz()">Play Again 🔄</button>
     <button class="btn btn-outline" onclick="showScreen('screen-home')">Home 🏠</button>
   </div>
+  <div class="score-actions" id="adv-score-actions" style="display:none">
+    <button class="btn btn-primary" id="adv-next-btn">Next Stage →</button>
+    <button class="btn btn-outline" onclick="showScreen('screen-adventure')">Map 🗺️</button>
+  </div>
+</div>
+
+<!-- ADVENTURE -->
+<div id="screen-adventure" class="screen">
+  <div class="adv-hero">
+    <h2>🗺️ Adventure Mode</h2>
+    <div class="sub" id="adv-progress-sub">Complete stages to advance</div>
+    <div class="adv-progress-bar"><div class="adv-progress-fill" id="adv-progress-fill" style="width:0%"></div></div>
+  </div>
+  <div id="adv-map" style="padding-bottom:16px"></div>
 </div>
 
 <!-- WORDS -->
@@ -622,7 +672,7 @@ const ANALOGIES = [
 // ════════════════════════════════════════════════════════════
 // STATE & STORAGE
 // ════════════════════════════════════════════════════════════
-const K={sessions:'wq_sessions',seen:'wq_seen',known:'wq_known',streak:'wq_streak',settings:'wq_settings',pin:'wq_pin_hash',best:'wq_best_streak'};
+const K={sessions:'wq_sessions',seen:'wq_seen',known:'wq_known',streak:'wq_streak',settings:'wq_settings',pin:'wq_pin_hash',best:'wq_best_streak',adventure:'wq_adventure'};
 function load(k,d){try{const v=localStorage.getItem(k);return v!==null?JSON.parse(v):d}catch{return d}}
 function save(k,v){localStorage.setItem(k,JSON.stringify(v))}
 function getSessions(){return load(K.sessions,[])}
@@ -653,6 +703,7 @@ function showScreen(id){
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   if(TAB_MAP[id])document.getElementById(TAB_MAP[id]).classList.add('active');
   if(id==='screen-home')refreshHome();
+  if(id==='screen-adventure')renderAdventureMap();
   if(id==='screen-words')refreshWords();
   if(id==='screen-stats')refreshStats();
   if(id==='screen-settings')loadSettings();
@@ -710,6 +761,120 @@ function setHomeType(val, el){
 // ════════════════════════════════════════════════════════════
 let quizWords=[],quizIdx=0,quizScore=0,quizAnswered=false,quizAnalogies=[],quizType='definition';
 let lastQuizWordIds=new Set(),lastQuizAnalogyIds=new Set();
+
+let adventureMode=false,adventureStageId=null;
+
+const ADV_STAGES=[
+  {id:1,diff:'Easy',  world:'🌿 The Meadow'},
+  {id:2,diff:'Easy',  world:'🌿 The Meadow'},
+  {id:3,diff:'Easy',  world:'🌿 The Meadow'},
+  {id:4,diff:'Medium',world:'⛰️ The Mountain'},
+  {id:5,diff:'Medium',world:'⛰️ The Mountain'},
+  {id:6,diff:'Medium',world:'⛰️ The Mountain'},
+  {id:7,diff:'Hard',  world:'🏔️ The Summit'},
+  {id:8,diff:'Hard',  world:'🏔️ The Summit'},
+  {id:9,diff:'Hard',  world:'🏔️ The Summit'},
+];
+
+function getAdventure(){return load(K.adventure,{unlocked:1,best:{}})}
+
+function exitQuiz(){
+  adventureMode=false;
+  showScreen('screen-home');
+}
+
+function startAdventureStage(id){
+  const stage=ADV_STAGES.find(s=>s.id===id);
+  if(!stage)return;
+  const adv=getAdventure();
+  if(id>adv.unlocked){showToast('Complete the previous stage first!','error');return}
+  adventureMode=true;
+  adventureStageId=id;
+  // Override settings for adventure: always definition, 10 questions, correct difficulty
+  const s=getSettings();
+  s.diff=stage.diff;s.quizType='definition';s.sessionSize=10;
+  save(K.settings,s);
+  startQuiz();
+}
+
+function renderAdventureMap(){
+  const adv=getAdventure();
+  const passedCount=Object.keys(adv.best).filter(k=>adv.best[k]>=80).length;
+  document.getElementById('adv-progress-sub').textContent=passedCount+' / 9 stages completed';
+  document.getElementById('adv-progress-fill').style.width=(passedCount/9*100)+'%';
+
+  const worlds=[
+    {name:'🌿 The Meadow',   diff:'Easy',   stages:[1,2,3]},
+    {name:'⛰️ The Mountain', diff:'Medium', stages:[4,5,6]},
+    {name:'🏔️ The Summit',  diff:'Hard',   stages:[7,8,9]},
+  ];
+
+  const map=document.getElementById('adv-map');
+  map.innerHTML='';
+
+  worlds.forEach(world=>{
+    const wDiv=document.createElement('div');
+    wDiv.className='adv-world';
+
+    const lbl=document.createElement('div');
+    lbl.className='adv-world-label';
+    lbl.textContent=world.name+' — '+world.diff;
+    wDiv.appendChild(lbl);
+
+    const card=document.createElement('div');
+    card.className='adv-world-card';
+
+    const row=document.createElement('div');
+    row.className='adv-stages-row';
+
+    world.stages.forEach((sid,i)=>{
+      const pct=adv.best[sid]||0;
+      const passed=pct>=80;
+      const isLocked=sid>adv.unlocked;
+      const isCurrent=sid===adv.unlocked&&!passed;
+
+      const nodeDiv=document.createElement('div');
+      nodeDiv.className='adv-stage-node';
+
+      const btn=document.createElement('div');
+      let btnClass='adv-node-btn';
+      if(isLocked)btnClass+=' locked';
+      else if(passed)btnClass+=' unlocked';
+      else if(isCurrent)btnClass+=' current';
+      else btnClass+=' unlocked';
+      btn.className=btnClass;
+      btn.innerHTML='<div class="adv-node-num">'+sid+'</div><div class="adv-node-icon">'+(isLocked?'🔒':passed?'✅':'▶️')+'</div>';
+      if(!isLocked)btn.onclick=()=>startAdventureStage(sid);
+
+      const stars=document.createElement('div');
+      stars.className='adv-node-stars';
+      stars.textContent=passed?(pct>=90?'★★★':pct>=80?'★★☆':'★☆☆'):'';
+
+      const pctDiv=document.createElement('div');
+      pctDiv.className='adv-node-pct';
+      pctDiv.textContent=pct?pct+'%':'';
+
+      nodeDiv.appendChild(btn);
+      nodeDiv.appendChild(stars);
+      nodeDiv.appendChild(pctDiv);
+      row.appendChild(nodeDiv);
+
+      if(i<2){
+        const conn=document.createElement('div');
+        conn.className='adv-connector'+(passed?' done':'');
+        row.appendChild(conn);
+      }
+    });
+
+    card.appendChild(row);
+    wDiv.appendChild(card);
+    map.appendChild(wDiv);
+  });
+
+  // Update home card sub text
+  const homeSub=document.getElementById('adv-home-sub');
+  if(homeSub)homeSub.textContent=passedCount>0?passedCount+' / 9 stages completed':'Begin your vocabulary adventure!';
+}
 const LETTERS=['A','B','C','D'];
 function shuffle(a){return[...a].sort(()=>Math.random()-.5)}
 
@@ -884,6 +1049,13 @@ function finishQuiz(){
   save(K.sessions,sessions.slice(0,50));
   lastQuizWordIds=new Set(quizWords.map(w=>w.id));
   lastQuizAnalogyIds=new Set(quizAnalogies.map(a=>a.a+'|'+a.c));
+  if(adventureMode&&adventureStageId!==null){
+    const adv=getAdventure();
+    const prev=adv.best[adventureStageId]||0;
+    if(pct>prev)adv.best[adventureStageId]=pct;
+    if(pct>=80&&adventureStageId<9)adv.unlocked=Math.max(adv.unlocked,adventureStageId+1);
+    save(K.adventure,adv);
+  }
   updateStreak();
   showScoreScreen(quizScore,total,pct);
 }
@@ -910,6 +1082,35 @@ function showScoreScreen(score,total,pct){
   document.getElementById('score-denom').textContent='out of '+total;
   document.getElementById('score-subtitle').textContent=t+' ('+pct+'%)';
   if(pct>=70)launchConfetti();
+  // Show correct action buttons
+  const normalActions=document.getElementById('normal-score-actions');
+  const advActions=document.getElementById('adv-score-actions');
+  if(adventureMode){
+    normalActions.style.display='none';
+    advActions.style.display='';
+    const passed=pct>=80;
+    const isLast=adventureStageId===9;
+    const nextBtn=document.getElementById('adv-next-btn');
+    if(passed&&isLast){
+      nextBtn.textContent='🏆 All Done!';
+      nextBtn.onclick=()=>showScreen('screen-adventure');
+      document.getElementById('score-subtitle').textContent='🏆 You conquered all 9 stages! ('+pct+'%)';
+    } else if(passed){
+      nextBtn.textContent='Next Stage →';
+      const nextId=adventureStageId+1;
+      nextBtn.onclick=()=>startAdventureStage(nextId);
+      document.getElementById('score-subtitle').textContent='✅ Passed! Stage '+(adventureStageId+1)+' unlocked! ('+pct+'%)';
+    } else {
+      nextBtn.textContent='Try Again 🔄';
+      const retryId=adventureStageId;
+      nextBtn.onclick=()=>startAdventureStage(retryId);
+      document.getElementById('score-subtitle').textContent='Need 80% to pass. You got '+pct+'% — keep going!';
+    }
+    adventureMode=false;
+  } else {
+    normalActions.style.display='';
+    advActions.style.display='none';
+  }
 }
 
 function launchConfetti(){
@@ -1040,7 +1241,7 @@ function loadSettings(){
 function saveSetting(key,val,silent){const s=getSettings();s[key]=val;save(K.settings,s);if(!silent)showToast('Saved!','success')}
 async function savePin(){const v=document.getElementById('pin-input').value.trim();if(!/^\d{4}$/.test(v)){showToast('Please enter exactly 4 digits','error');return}localStorage.setItem(K.pin,await sha256(v));document.getElementById('pin-input').value='';loadSettings();showToast('PIN set!','success')}
 function clearPin(){localStorage.removeItem(K.pin);loadSettings();showToast('PIN removed','success')}
-function confirmReset(){if(!confirm('Reset all progress? This cannot be undone.'))return;[K.sessions,K.seen,K.known,K.streak,K.best].forEach(k=>localStorage.removeItem(k));showToast('Progress reset','success');showScreen('screen-home')}
+function confirmReset(){if(!confirm('Reset all progress? This cannot be undone.'))return;[K.sessions,K.seen,K.known,K.streak,K.best,K.adventure].forEach(k=>localStorage.removeItem(k));showToast('Progress reset','success');showScreen('screen-home')}
 
 // ════════════════════════════════════════════════════════════
 // TOAST & INIT
