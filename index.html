@@ -4,871 +4,205 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>WordWise — Vocabulary Quiz</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 :root {
-  --primary:  #2d6a4f;
-  --primary2: #1b4332;
-  --accent:   #52b788;
-  --light:    #d8f3dc;
-  --bg:       #fdf8f0;
-  --card:     #ffffff;
-  --text:     #1b3a2f;
-  --muted:    #6b8f71;
-  --border:   #c7e6cb;
-  --gold:     #e8a91f;
-  --red:      #e76f51;
-  --red-light:#fde8e3;
+  --primary:#2d6a4f; --primary2:#1b4332; --accent:#52b788;
+  --light:#d8f3dc; --bg:#fdf8f0; --card:#ffffff;
+  --text:#1b3a2f; --muted:#6b8f71; --border:#c7e6cb;
+  --gold:#e8a91f; --red:#e76f51; --red-light:#fde8e3;
   --green-light:#e8f5e9;
-  --shadow:   0 4px 20px rgba(45,106,79,0.10);
-  --shadow-sm:0 2px 8px rgba(45,106,79,0.08);
-  --radius:   16px;
-  --tab-h:    64px;
+  --shadow:0 4px 20px rgba(45,106,79,.10);
+  --shadow-sm:0 2px 8px rgba(45,106,79,.08);
+  --radius:16px; --tab-h:64px;
 }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Nunito',sans-serif;background:#e8e0d4;display:flex;justify-content:center;min-height:100vh;-webkit-tap-highlight-color:transparent}
+#app{width:100%;max-width:430px;min-height:100vh;background:var(--bg);position:relative;overflow:hidden}
 
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+.screen{display:none;flex-direction:column;min-height:100vh;padding-bottom:calc(var(--tab-h) + env(safe-area-inset-bottom,0px) + 12px);animation:fadeSlideIn .22s ease}
+.screen.active{display:flex}
+@keyframes fadeSlideIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 
-body {
-  font-family: 'Nunito', sans-serif;
-  background: #e8e0d4;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  min-height: 100vh;
-  -webkit-tap-highlight-color: transparent;
-}
+.app-header{background:linear-gradient(135deg,var(--primary2),var(--primary));color:#fff;padding:52px 20px 18px}
+.app-header h1{font-family:'Lora',serif;font-size:22px;font-weight:700}
+.app-header .sub{font-size:13px;opacity:.75;margin-top:2px}
+.header-row{display:flex;justify-content:space-between;align-items:flex-start}
+.streak-badge{background:rgba(255,255,255,.18);border-radius:20px;padding:5px 12px;font-size:14px;font-weight:700;display:flex;align-items:center;gap:4px}
 
-#app {
-  width: 100%;
-  max-width: 430px;
-  min-height: 100vh;
-  background: var(--bg);
-  position: relative;
-  overflow: hidden;
-}
+#tab-bar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;height:calc(var(--tab-h) + env(safe-area-inset-bottom,0px));background:var(--card);border-top:1px solid var(--border);display:flex;align-items:flex-start;z-index:100;box-shadow:0 -2px 12px rgba(45,106,79,.08);padding-top:6px}
+#tab-bar.hidden{display:none}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 4px 4px;cursor:pointer;color:var(--muted);font-size:10px;font-weight:600;transition:color .15s;min-height:44px}
+.tab .tab-icon{font-size:20px;line-height:1}
+.tab.active{color:var(--primary)}
+.tab-quiz-fab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;color:var(--muted);font-size:10px;font-weight:600;position:relative}
+.fab-circle{width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--primary));display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 4px 16px rgba(45,106,79,.35);position:absolute;top:-18px;transition:transform .15s}
+.tab-quiz-fab:active .fab-circle{transform:scale(.94)}
+.fab-label{margin-top:38px;color:var(--primary);font-weight:700;font-size:10px}
 
-/* ── Screens ─────────────────────────────────────────────────────── */
-.screen {
-  display: none;
-  flex-direction: column;
-  min-height: 100vh;
-  padding-bottom: calc(var(--tab-h) + env(safe-area-inset-bottom, 0px) + 12px);
-  animation: fadeSlideIn 0.22s ease;
-}
-.screen.active { display: flex; }
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow-sm);padding:18px;margin:0 16px 12px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:none;border-radius:12px;font-family:'Nunito',sans-serif;font-size:15px;font-weight:700;cursor:pointer;padding:12px 20px;min-height:44px;transition:transform .12s}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--primary));color:#fff;box-shadow:0 4px 14px rgba(45,106,79,.30);width:100%}
+.btn-outline{background:transparent;border:2px solid var(--primary);color:var(--primary);width:100%}
+.btn-danger{background:var(--red-light);color:var(--red);width:100%}
+.btn-sm{font-size:13px;padding:8px 14px;min-height:36px}
 
-@keyframes fadeSlideIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
+.diff-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:700}
+.diff-Easy  {background:#d8f3dc;color:#1b4332}
+.diff-Medium{background:#dbeafe;color:#1e40af}
+.diff-Hard  {background:#f3e8ff;color:#6b21a8}
 
-/* ── Header ──────────────────────────────────────────────────────── */
-.app-header {
-  background: linear-gradient(135deg, var(--primary2) 0%, var(--primary) 100%);
-  color: #fff;
-  padding: 52px 20px 18px;
-  position: relative;
-}
-.app-header h1 {
-  font-family: 'Lora', serif;
-  font-size: 22px;
-  font-weight: 700;
-  letter-spacing: 0.3px;
-}
-.app-header .sub { font-size: 13px; opacity: 0.75; margin-top: 2px; }
-.header-row { display: flex; justify-content: space-between; align-items: flex-start; }
-.streak-badge {
-  background: rgba(255,255,255,0.18);
-  border-radius: 20px;
-  padding: 5px 12px;
-  font-size: 14px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
+#toast{position:fixed;top:60px;left:50%;transform:translateX(-50%) translateY(-20px);background:var(--text);color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;font-weight:600;z-index:999;opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;max-width:300px;text-align:center}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#toast.success{background:var(--primary)}
+#toast.error{background:var(--red)}
 
-/* ── Tab Bar ─────────────────────────────────────────────────────── */
-#tab-bar {
-  position: fixed;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 100%;
-  max-width: 430px;
-  height: calc(var(--tab-h) + env(safe-area-inset-bottom, 0px));
-  background: var(--card);
-  border-top: 1px solid var(--border);
-  display: flex;
-  align-items: flex-start;
-  z-index: 100;
-  box-shadow: 0 -2px 12px rgba(45,106,79,0.08);
-  padding-top: 6px;
-}
-#tab-bar.hidden { display: none; }
+/* ── LOCK ── */
+#screen-lock{background:linear-gradient(160deg,var(--primary2),var(--primary) 60%,var(--accent));align-items:center;justify-content:center;padding-bottom:0}
+.lock-logo{font-family:'Lora',serif;color:#fff;font-size:28px;font-weight:700;text-align:center;margin-bottom:6px}
+.lock-sub{color:rgba(255,255,255,.65);font-size:14px;margin-bottom:40px}
+.lock-dots{display:flex;gap:14px;margin-bottom:32px}
+.lock-dot{width:16px;height:16px;border-radius:50%;border:2px solid rgba(255,255,255,.6);background:transparent;transition:background .15s}
+.lock-dot.filled{background:#fff;border-color:#fff}
+.lock-dot.error{background:var(--red);border-color:var(--red)}
+.pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;width:260px}
+.pin-key{background:rgba(255,255,255,.15);border:none;border-radius:12px;color:#fff;font-family:'Nunito',sans-serif;font-size:22px;font-weight:700;height:60px;cursor:pointer;transition:background .12s,transform .1s}
+.pin-key:active{background:rgba(255,255,255,.28);transform:scale(.95)}
 
-.tab {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 3px;
-  padding: 6px 4px 4px;
-  cursor: pointer;
-  color: var(--muted);
-  font-size: 10px;
-  font-weight: 600;
-  transition: color 0.15s;
-  min-height: 44px;
-}
-.tab .tab-icon { font-size: 20px; line-height: 1; }
-.tab.active { color: var(--primary); }
+/* ── HOME ── */
+.home-stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 16px 0}
+.stat-mini{background:var(--card);border-radius:12px;padding:12px 10px;text-align:center;box-shadow:var(--shadow-sm)}
+.stat-mini .val{font-size:22px;font-weight:900;color:var(--primary);line-height:1}
+.stat-mini .lbl{font-size:10px;color:var(--muted);margin-top:3px;font-weight:600}
+.tip-card{background:var(--light);border-left:4px solid var(--accent)}
+.tip-card .tip-word{font-family:'Lora',serif;font-size:18px;font-weight:700;color:var(--primary2)}
+.tip-card .tip-def{font-size:13px;color:var(--text);margin-top:4px;line-height:1.5}
+.tip-card .tip-meta{font-size:11px;color:var(--muted);margin-top:6px;font-style:italic}
 
-.tab-quiz-fab {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 3px;
-  padding-top: 0;
-  cursor: pointer;
-  color: var(--muted);
-  font-size: 10px;
-  font-weight: 600;
-  position: relative;
-}
-.fab-circle {
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--accent), var(--primary));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 22px;
-  box-shadow: 0 4px 16px rgba(45,106,79,0.35);
-  position: absolute;
-  top: -18px;
-  transition: transform 0.15s;
-}
-.tab-quiz-fab:active .fab-circle { transform: scale(0.94); }
-.fab-label { margin-top: 38px; color: var(--primary); font-weight: 700; font-size: 10px; }
+/* ── QUIZ ── */
+#screen-quiz{padding-bottom:20px}
+.quiz-top{background:linear-gradient(135deg,var(--primary2),var(--primary));color:#fff;padding:52px 20px 20px}
+.quiz-progress-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.quiz-progress-label{font-size:13px;font-weight:700;opacity:.85}
+.quiz-progress-track{height:6px;background:rgba(255,255,255,.25);border-radius:100px;flex:1;margin:0 12px;overflow:hidden}
+.quiz-progress-fill{height:100%;background:#fff;border-radius:100px;transition:width .4s ease}
+.quiz-type-tag{font-size:11px;font-weight:800;opacity:.7;letter-spacing:.5px;text-transform:uppercase;margin-top:4px}
 
-/* ── Cards ───────────────────────────────────────────────────────── */
-.card {
-  background: var(--card);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-sm);
-  padding: 18px;
-  margin: 0 16px 12px;
-}
+.quiz-word-card{background:var(--card);border-radius:20px;margin:16px;padding:24px 20px 20px;box-shadow:var(--shadow)}
+.quiz-pos-tag{display:inline-block;background:var(--light);color:var(--primary);font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px}
+.quiz-word{font-family:'Lora',serif;font-size:34px;font-weight:700;color:var(--text);line-height:1.1;margin-bottom:10px}
+.quiz-analogy-word{font-family:'Lora',serif;font-size:22px;font-weight:700;color:var(--text);line-height:1.4;margin-bottom:6px}
+.quiz-example{font-family:'Lora',serif;font-style:italic;font-size:14px;color:var(--muted);line-height:1.6;border-top:1px solid var(--border);padding-top:12px;margin-top:4px}
+.quiz-question-label{font-size:13px;font-weight:700;color:var(--muted);margin:0 20px 10px;text-transform:uppercase;letter-spacing:.5px}
 
-/* ── Buttons ─────────────────────────────────────────────────────── */
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  border: none;
-  border-radius: 12px;
-  font-family: 'Nunito', sans-serif;
-  font-size: 15px;
-  font-weight: 700;
-  cursor: pointer;
-  padding: 12px 20px;
-  min-height: 44px;
-  transition: transform 0.12s, box-shadow 0.12s;
-}
-.btn:active { transform: scale(0.97); }
-.btn-primary {
-  background: linear-gradient(135deg, var(--accent), var(--primary));
-  color: #fff;
-  box-shadow: 0 4px 14px rgba(45,106,79,0.30);
-  width: 100%;
-}
-.btn-outline {
-  background: transparent;
-  border: 2px solid var(--primary);
-  color: var(--primary);
-  width: 100%;
-}
-.btn-danger {
-  background: var(--red-light);
-  color: var(--red);
-  width: 100%;
-}
-.btn-sm {
-  font-size: 13px;
-  padding: 8px 14px;
-  min-height: 36px;
-}
+.choices{margin:0 16px;display:flex;flex-direction:column;gap:10px}
+.choice-btn{background:var(--card);border:2px solid var(--border);border-radius:14px;padding:14px 16px;text-align:left;cursor:pointer;font-family:'Nunito',sans-serif;font-size:14px;font-weight:600;color:var(--text);display:flex;align-items:flex-start;gap:12px;transition:border-color .15s,background .15s,transform .1s;min-height:44px;-webkit-tap-highlight-color:transparent;line-height:1.4}
+.choice-btn:active{transform:scale(.98)}
+.choice-btn.selected{border-color:var(--primary);background:var(--light)}
+.choice-btn.correct{border-color:var(--accent);background:var(--green-light);color:var(--primary2)}
+.choice-btn.wrong{border-color:var(--red);background:var(--red-light);color:var(--red)}
+.choice-btn.disabled{pointer-events:none}
+.choice-btn.reveal-correct{border-color:var(--accent);background:var(--green-light);color:var(--primary2)}
+.choice-letter{width:26px;height:26px;border-radius:50%;background:var(--border);color:var(--muted);font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;transition:background .15s,color .15s}
+.choice-btn.correct .choice-letter,.choice-btn.reveal-correct .choice-letter{background:var(--accent);color:#fff}
+.choice-btn.wrong .choice-letter{background:var(--red);color:#fff}
 
-/* ── Progress Bar ────────────────────────────────────────────────── */
-.progress-track {
-  background: var(--border);
-  border-radius: 100px;
-  height: 8px;
-  overflow: hidden;
-}
-.progress-fill {
-  height: 100%;
-  border-radius: 100px;
-  background: linear-gradient(90deg, var(--accent), var(--primary));
-  transition: width 0.4s ease;
-}
+.quiz-feedback{margin:12px 16px 0;padding:14px 16px;border-radius:12px;font-size:13px;line-height:1.5;display:none}
+.quiz-feedback.show{display:block}
+.quiz-feedback.correct-fb{background:var(--green-light);color:var(--primary2)}
+.quiz-feedback.wrong-fb{background:var(--red-light);color:var(--red)}
+.quiz-feedback .fb-title{font-weight:800;margin-bottom:4px;font-size:14px}
 
-/* ── Level Badge ─────────────────────────────────────────────────── */
-.level-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 4px 10px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 700;
-  background: var(--light);
-  color: var(--primary);
-}
+.quiz-next-btn{position:fixed;bottom:calc(var(--tab-h) + env(safe-area-inset-bottom,0px) + 10px);left:50%;transform:translateX(-50%);width:calc(100% - 32px);max-width:398px;z-index:90;display:none}
+.quiz-next-btn.show{display:block}
 
-/* ── Toast ───────────────────────────────────────────────────────── */
-#toast {
-  position: fixed;
-  top: 60px;
-  left: 50%;
-  transform: translateX(-50%) translateY(-20px);
-  background: var(--text);
-  color: #fff;
-  padding: 10px 20px;
-  border-radius: 20px;
-  font-size: 13px;
-  font-weight: 600;
-  z-index: 999;
-  opacity: 0;
-  transition: opacity 0.2s, transform 0.2s;
-  pointer-events: none;
-  max-width: 300px;
-  text-align: center;
-}
-#toast.show {
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
-}
-#toast.success { background: var(--primary); }
-#toast.error   { background: var(--red); }
+/* ── SCORE ── */
+#score-screen{display:none;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;background:var(--bg);padding:40px 20px;text-align:center;position:relative;overflow:hidden}
+#score-screen.active{display:flex}
+.score-emoji{font-size:64px;margin-bottom:10px}
+.score-title{font-family:'Lora',serif;font-size:26px;font-weight:700;color:var(--text);margin-bottom:6px}
+.score-subtitle{color:var(--muted);font-size:15px;margin-bottom:24px}
+.score-big{font-size:72px;font-weight:900;color:var(--primary);line-height:1;margin-bottom:4px}
+.score-denom{font-size:20px;color:var(--muted);margin-bottom:24px}
+.score-actions{display:flex;flex-direction:column;gap:10px;width:100%;max-width:280px}
+.confetti-piece{position:absolute;width:8px;height:12px;border-radius:2px;opacity:0;animation:confettiFall 2.5s ease-in forwards}
+@keyframes confettiFall{0%{opacity:1;transform:translateY(-20px) rotate(0deg)}100%{opacity:0;transform:translateY(600px) rotate(720deg)}}
 
-/* ══════════════════════════════════════════════════════════════════
-   SCREEN: LOCK
-══════════════════════════════════════════════════════════════════ */
-#screen-lock {
-  background: linear-gradient(160deg, var(--primary2) 0%, var(--primary) 60%, var(--accent) 100%);
-  align-items: center;
-  justify-content: center;
-  padding-bottom: 0;
-}
-.lock-logo {
-  font-family: 'Lora', serif;
-  color: #fff;
-  font-size: 28px;
-  font-weight: 700;
-  text-align: center;
-  margin-bottom: 6px;
-}
-.lock-sub { color: rgba(255,255,255,0.65); font-size: 14px; margin-bottom: 40px; }
-.lock-dots {
-  display: flex;
-  gap: 14px;
-  margin-bottom: 32px;
-}
-.lock-dot {
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  border: 2px solid rgba(255,255,255,0.6);
-  background: transparent;
-  transition: background 0.15s;
-}
-.lock-dot.filled { background: #fff; border-color: #fff; }
-.lock-dot.error  { background: var(--red); border-color: var(--red); }
+/* ── WORDS ── */
+.words-filters{display:flex;gap:8px;padding:14px 16px 0;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.words-filters::-webkit-scrollbar{display:none}
+.filter-chip{flex-shrink:0;padding:6px 14px;border-radius:20px;border:1.5px solid var(--border);background:var(--card);font-size:12px;font-weight:700;color:var(--muted);cursor:pointer;transition:all .15s}
+.filter-chip.active{background:var(--primary);border-color:var(--primary);color:#fff}
+.words-search{margin:12px 16px 0;position:relative}
+.words-search input{width:100%;padding:11px 16px 11px 40px;border-radius:12px;border:1.5px solid var(--border);background:var(--card);font-family:'Nunito',sans-serif;font-size:14px;color:var(--text);outline:none;min-height:44px}
+.words-search input:focus{border-color:var(--primary)}
+.words-search .search-icon{position:absolute;left:13px;top:50%;transform:translateY(-50%);font-size:16px;pointer-events:none}
+.word-list{margin:10px 0 0}
+.word-item{display:flex;align-items:center;justify-content:space-between;padding:13px 20px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s;min-height:56px}
+.word-item:active{background:var(--light)}
+.word-item .wi-word{font-family:'Lora',serif;font-size:16px;font-weight:600;color:var(--text)}
+.word-item .wi-def{font-size:12px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px}
+.word-item .wi-right{display:flex;align-items:center;gap:6px}
 
-.pin-pad {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
-  width: 260px;
-}
-.pin-key {
-  background: rgba(255,255,255,0.15);
-  border: none;
-  border-radius: 12px;
-  color: #fff;
-  font-family: 'Nunito', sans-serif;
-  font-size: 22px;
-  font-weight: 700;
-  height: 60px;
-  cursor: pointer;
-  transition: background 0.12s, transform 0.1s;
-  -webkit-tap-highlight-color: transparent;
-}
-.pin-key:active { background: rgba(255,255,255,0.28); transform: scale(0.95); }
-.pin-key.del { font-size: 18px; }
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:flex-end;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal-sheet{background:var(--bg);border-radius:24px 24px 0 0;width:100%;max-width:430px;padding:20px 20px calc(env(safe-area-inset-bottom,0px) + 24px);max-height:85vh;overflow-y:auto;animation:slideUp .25s cubic-bezier(.34,1.36,.64,1)}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-handle{width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px}
+.modal-word{font-family:'Lora',serif;font-size:30px;font-weight:700;color:var(--text)}
+.modal-pos{display:inline-block;background:var(--light);color:var(--primary);font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;margin:8px 0;text-transform:uppercase}
+.modal-def{font-size:15px;color:var(--text);line-height:1.6;margin-bottom:12px}
+.modal-example{font-family:'Lora',serif;font-style:italic;font-size:14px;color:var(--muted);background:var(--light);border-radius:10px;padding:12px 14px;line-height:1.6;margin-bottom:14px}
+.modal-synonyms{font-size:13px;color:var(--muted);margin-bottom:8px}
+.modal-antonyms{font-size:13px;color:var(--muted);margin-bottom:20px}
+.modal-actions{display:flex;gap:10px}
 
-/* ══════════════════════════════════════════════════════════════════
-   SCREEN: HOME
-══════════════════════════════════════════════════════════════════ */
-.home-stats-row {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-  margin: 14px 16px 0;
-}
-.stat-mini {
-  background: var(--card);
-  border-radius: 12px;
-  padding: 12px 10px;
-  text-align: center;
-  box-shadow: var(--shadow-sm);
-}
-.stat-mini .val {
-  font-size: 22px;
-  font-weight: 900;
-  color: var(--primary);
-  line-height: 1;
-}
-.stat-mini .lbl {
-  font-size: 10px;
-  color: var(--muted);
-  margin-top: 3px;
-  font-weight: 600;
-}
+/* ── STATS ── */
+.stats-hero{background:linear-gradient(135deg,var(--primary2),var(--primary));padding:52px 20px 20px;color:#fff}
+.stats-hero h2{font-family:'Lora',serif;font-size:20px;font-weight:700}
+.streak-row{display:flex;gap:10px;margin:14px 16px 0}
+.streak-card{flex:1;background:var(--card);border-radius:14px;padding:14px;text-align:center;box-shadow:var(--shadow-sm)}
+.streak-card .sc-val{font-size:28px;font-weight:900;color:var(--primary)}
+.streak-card .sc-lbl{font-size:11px;color:var(--muted);font-weight:600;margin-top:2px}
+.chart-container{background:var(--card);border-radius:var(--radius);margin:12px 16px;padding:16px;box-shadow:var(--shadow-sm)}
+.chart-title{font-size:14px;font-weight:700;color:var(--text);margin-bottom:14px}
+#stats-canvas{width:100%;height:140px;display:block}
+.sessions-list{margin:0 16px}
+.session-item{background:var(--card);border-radius:12px;padding:13px 16px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;box-shadow:var(--shadow-sm)}
+.si-left .si-date{font-size:13px;color:var(--muted)}
+.si-left .si-info{font-size:12px;font-weight:700;color:var(--primary);margin-top:2px}
+.si-score{font-size:20px;font-weight:900;color:var(--primary)}
 
-.home-action { margin: 14px 16px 0; }
-
-.tip-card {
-  background: var(--light);
-  border-left: 4px solid var(--accent);
-}
-.tip-card .tip-word {
-  font-family: 'Lora', serif;
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--primary2);
-}
-.tip-card .tip-def {
-  font-size: 13px;
-  color: var(--text);
-  margin-top: 4px;
-  line-height: 1.5;
-}
-.tip-card .tip-meta {
-  font-size: 11px;
-  color: var(--muted);
-  margin-top: 6px;
-  font-style: italic;
-}
-
-/* ══════════════════════════════════════════════════════════════════
-   SCREEN: QUIZ
-══════════════════════════════════════════════════════════════════ */
-#screen-quiz { padding-bottom: 20px; }
-
-.quiz-top {
-  background: linear-gradient(135deg, var(--primary2), var(--primary));
-  color: #fff;
-  padding: 52px 20px 20px;
-}
-.quiz-progress-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-}
-.quiz-progress-label { font-size: 13px; font-weight: 700; opacity: 0.85; }
-.quiz-progress-track {
-  height: 6px;
-  background: rgba(255,255,255,0.25);
-  border-radius: 100px;
-  flex: 1;
-  margin: 0 12px;
-  overflow: hidden;
-}
-.quiz-progress-fill {
-  height: 100%;
-  background: #fff;
-  border-radius: 100px;
-  transition: width 0.4s ease;
-}
-
-.quiz-word-card {
-  background: var(--card);
-  border-radius: 20px;
-  margin: 16px;
-  padding: 24px 20px 20px;
-  box-shadow: var(--shadow);
-}
-.quiz-pos-tag {
-  display: inline-block;
-  background: var(--light);
-  color: var(--primary);
-  font-size: 11px;
-  font-weight: 700;
-  padding: 3px 10px;
-  border-radius: 20px;
-  margin-bottom: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-.quiz-word {
-  font-family: 'Lora', serif;
-  font-size: 34px;
-  font-weight: 700;
-  color: var(--text);
-  line-height: 1.1;
-  margin-bottom: 10px;
-}
-.quiz-example {
-  font-family: 'Lora', serif;
-  font-style: italic;
-  font-size: 14px;
-  color: var(--muted);
-  line-height: 1.6;
-  border-top: 1px solid var(--border);
-  padding-top: 12px;
-  margin-top: 4px;
-}
-
-.quiz-question-label {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--muted);
-  margin: 0 20px 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.choices { margin: 0 16px; display: flex; flex-direction: column; gap: 10px; }
-
-.choice-btn {
-  background: var(--card);
-  border: 2px solid var(--border);
-  border-radius: 14px;
-  padding: 14px 16px;
-  text-align: left;
-  cursor: pointer;
-  font-family: 'Nunito', sans-serif;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text);
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  transition: border-color 0.15s, background 0.15s, transform 0.1s;
-  min-height: 44px;
-  -webkit-tap-highlight-color: transparent;
-  line-height: 1.4;
-}
-.choice-btn:active { transform: scale(0.98); }
-.choice-btn.selected { border-color: var(--primary); background: var(--light); }
-.choice-btn.correct  { border-color: var(--accent); background: var(--green-light); color: var(--primary2); }
-.choice-btn.wrong    { border-color: var(--red); background: var(--red-light); color: var(--red); }
-.choice-btn.disabled { pointer-events: none; }
-.choice-btn.reveal-correct { border-color: var(--accent); background: var(--green-light); color: var(--primary2); }
-
-.choice-letter {
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  background: var(--border);
-  color: var(--muted);
-  font-size: 13px;
-  font-weight: 800;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  margin-top: 1px;
-  transition: background 0.15s, color 0.15s;
-}
-.choice-btn.correct  .choice-letter { background: var(--accent); color: #fff; }
-.choice-btn.wrong    .choice-letter { background: var(--red); color: #fff; }
-.choice-btn.reveal-correct .choice-letter { background: var(--accent); color: #fff; }
-
-.quiz-feedback {
-  margin: 12px 16px 0;
-  padding: 14px 16px;
-  border-radius: 12px;
-  font-size: 13px;
-  line-height: 1.5;
-  display: none;
-}
-.quiz-feedback.show { display: block; }
-.quiz-feedback.correct-fb { background: var(--green-light); color: var(--primary2); }
-.quiz-feedback.wrong-fb   { background: var(--red-light); color: var(--red); }
-.quiz-feedback .fb-title  { font-weight: 800; margin-bottom: 4px; font-size: 14px; }
-
-.quiz-next-btn {
-  position: fixed;
-  bottom: calc(var(--tab-h) + env(safe-area-inset-bottom, 0px) + 10px);
-  left: 50%;
-  transform: translateX(-50%);
-  width: calc(100% - 32px);
-  max-width: 398px;
-  z-index: 90;
-  display: none;
-}
-.quiz-next-btn.show { display: block; }
-
-/* ── Score Screen ─────────────────────────────────────────────────── */
-#score-screen {
-  display: none;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  background: var(--bg);
-  padding: 40px 20px;
-  text-align: center;
-  position: relative;
-  overflow: hidden;
-}
-#score-screen.active { display: flex; }
-
-.score-emoji { font-size: 64px; margin-bottom: 10px; }
-.score-title {
-  font-family: 'Lora', serif;
-  font-size: 26px;
-  font-weight: 700;
-  color: var(--text);
-  margin-bottom: 6px;
-}
-.score-subtitle { color: var(--muted); font-size: 15px; margin-bottom: 24px; }
-.score-big {
-  font-size: 72px;
-  font-weight: 900;
-  color: var(--primary);
-  line-height: 1;
-  margin-bottom: 4px;
-}
-.score-denom { font-size: 20px; color: var(--muted); margin-bottom: 24px; }
-.score-actions { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 280px; }
-
-/* Confetti */
-.confetti-piece {
-  position: absolute;
-  width: 8px;
-  height: 12px;
-  border-radius: 2px;
-  opacity: 0;
-  animation: confettiFall 2.5s ease-in forwards;
-}
-@keyframes confettiFall {
-  0%   { opacity: 1; transform: translateY(-20px) rotate(0deg); }
-  100% { opacity: 0; transform: translateY(600px) rotate(720deg); }
-}
-
-/* ══════════════════════════════════════════════════════════════════
-   SCREEN: WORDS
-══════════════════════════════════════════════════════════════════ */
-.words-filters {
-  display: flex;
-  gap: 8px;
-  padding: 14px 16px 0;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-}
-.words-filters::-webkit-scrollbar { display: none; }
-.filter-chip {
-  flex-shrink: 0;
-  padding: 6px 14px;
-  border-radius: 20px;
-  border: 1.5px solid var(--border);
-  background: var(--card);
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--muted);
-  cursor: pointer;
-  transition: all 0.15s;
-  -webkit-tap-highlight-color: transparent;
-}
-.filter-chip.active {
-  background: var(--primary);
-  border-color: var(--primary);
-  color: #fff;
-}
-
-.words-search {
-  margin: 12px 16px 0;
-  position: relative;
-}
-.words-search input {
-  width: 100%;
-  padding: 11px 16px 11px 40px;
-  border-radius: 12px;
-  border: 1.5px solid var(--border);
-  background: var(--card);
-  font-family: 'Nunito', sans-serif;
-  font-size: 14px;
-  color: var(--text);
-  outline: none;
-  min-height: 44px;
-}
-.words-search input:focus { border-color: var(--primary); }
-.words-search .search-icon {
-  position: absolute;
-  left: 13px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 16px;
-  pointer-events: none;
-}
-
-.word-list { margin: 10px 0 0; }
-.word-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 13px 20px;
-  border-bottom: 1px solid var(--border);
-  cursor: pointer;
-  transition: background 0.1s;
-  min-height: 56px;
-  -webkit-tap-highlight-color: transparent;
-}
-.word-item:active { background: var(--light); }
-.word-item .wi-left {}
-.word-item .wi-word {
-  font-family: 'Lora', serif;
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--text);
-}
-.word-item .wi-def {
-  font-size: 12px;
-  color: var(--muted);
-  margin-top: 2px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 220px;
-}
-.word-item .wi-right { display: flex; align-items: center; gap: 6px; }
-.wi-level { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 20px; }
-.wi-known { font-size: 16px; }
-
-.empty-state {
-  text-align: center;
-  padding: 48px 20px;
-  color: var(--muted);
-  font-size: 15px;
-}
-.empty-state .es-icon { font-size: 48px; margin-bottom: 12px; }
-
-/* Word Detail Modal */
-.modal-overlay {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.45);
-  z-index: 200;
-  align-items: flex-end;
-  justify-content: center;
-}
-.modal-overlay.open { display: flex; }
-.modal-sheet {
-  background: var(--bg);
-  border-radius: 24px 24px 0 0;
-  width: 100%;
-  max-width: 430px;
-  padding: 20px 20px calc(env(safe-area-inset-bottom, 0px) + 24px);
-  max-height: 85vh;
-  overflow-y: auto;
-  animation: slideUp 0.25s cubic-bezier(.34,1.36,.64,1);
-}
-@keyframes slideUp {
-  from { transform: translateY(100%); }
-  to   { transform: translateY(0); }
-}
-.modal-handle {
-  width: 40px;
-  height: 4px;
-  background: var(--border);
-  border-radius: 2px;
-  margin: 0 auto 16px;
-}
-.modal-word {
-  font-family: 'Lora', serif;
-  font-size: 30px;
-  font-weight: 700;
-  color: var(--text);
-}
-.modal-pos {
-  display: inline-block;
-  background: var(--light);
-  color: var(--primary);
-  font-size: 11px;
-  font-weight: 700;
-  padding: 3px 10px;
-  border-radius: 20px;
-  margin: 8px 0;
-  text-transform: uppercase;
-}
-.modal-def {
-  font-size: 15px;
-  color: var(--text);
-  line-height: 1.6;
-  margin-bottom: 12px;
-}
-.modal-example {
-  font-family: 'Lora', serif;
-  font-style: italic;
-  font-size: 14px;
-  color: var(--muted);
-  background: var(--light);
-  border-radius: 10px;
-  padding: 12px 14px;
-  line-height: 1.6;
-  margin-bottom: 14px;
-}
-.modal-synonyms { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
-.modal-synonyms strong { color: var(--text); }
-.modal-actions { display: flex; gap: 10px; }
-
-/* ══════════════════════════════════════════════════════════════════
-   SCREEN: STATS
-══════════════════════════════════════════════════════════════════ */
-.stats-hero {
-  background: linear-gradient(135deg, var(--primary2), var(--primary));
-  padding: 52px 20px 20px;
-  color: #fff;
-}
-.stats-hero h2 { font-family: 'Lora', serif; font-size: 20px; font-weight: 700; }
-
-.streak-row {
-  display: flex;
-  gap: 10px;
-  margin: 14px 16px 0;
-}
-.streak-card {
-  flex: 1;
-  background: var(--card);
-  border-radius: 14px;
-  padding: 14px;
-  text-align: center;
-  box-shadow: var(--shadow-sm);
-}
-.streak-card .sc-val { font-size: 28px; font-weight: 900; color: var(--primary); }
-.streak-card .sc-lbl { font-size: 11px; color: var(--muted); font-weight: 600; margin-top: 2px; }
-
-.chart-container {
-  background: var(--card);
-  border-radius: var(--radius);
-  margin: 12px 16px;
-  padding: 16px;
-  box-shadow: var(--shadow-sm);
-}
-.chart-title { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 14px; }
-#stats-canvas { width: 100%; height: 140px; display: block; }
-
-.sessions-list { margin: 0 16px; }
-.session-item {
-  background: var(--card);
-  border-radius: 12px;
-  padding: 13px 16px;
-  margin-bottom: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  box-shadow: var(--shadow-sm);
-}
-.si-left .si-date { font-size: 13px; color: var(--muted); }
-.si-left .si-level { font-size: 12px; font-weight: 700; color: var(--primary); margin-top: 2px; }
-.si-score { font-size: 20px; font-weight: 900; color: var(--primary); }
-
-/* ══════════════════════════════════════════════════════════════════
-   SCREEN: SETTINGS
-══════════════════════════════════════════════════════════════════ */
-.settings-hero {
-  background: linear-gradient(135deg, var(--primary2), var(--primary));
-  padding: 52px 20px 20px;
-  color: #fff;
-}
-.settings-hero h2 { font-family: 'Lora', serif; font-size: 20px; font-weight: 700; }
-
-.settings-section-label {
-  font-size: 11px;
-  font-weight: 800;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
-  margin: 18px 20px 8px;
-}
-
-.setting-row {
-  background: var(--card);
-  padding: 14px 20px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-bottom: 1px solid var(--border);
-  min-height: 52px;
-}
-.setting-row:first-of-type { border-radius: 12px 12px 0 0; }
-.setting-row:last-of-type  { border-radius: 0 0 12px 12px; border-bottom: none; }
-.setting-row:only-of-type  { border-radius: 12px; border-bottom: none; }
-.sr-label { font-size: 14px; font-weight: 700; color: var(--text); }
-.sr-sub   { font-size: 12px; color: var(--muted); margin-top: 2px; }
-
-.setting-row select {
-  border: 1.5px solid var(--border);
-  border-radius: 8px;
-  padding: 6px 10px;
-  font-family: 'Nunito', sans-serif;
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--text);
-  background: var(--bg);
-  min-height: 36px;
-  outline: none;
-}
-
-.settings-card { margin: 0 16px; background: var(--card); border-radius: 12px; overflow: hidden; }
-
-/* PIN Setup in Settings */
-.pin-setup-row { display: flex; gap: 8px; }
-.pin-setup-row input {
-  flex: 1;
-  padding: 10px 14px;
-  border: 1.5px solid var(--border);
-  border-radius: 10px;
-  font-family: 'Nunito', sans-serif;
-  font-size: 18px;
-  font-weight: 700;
-  text-align: center;
-  letter-spacing: 6px;
-  color: var(--text);
-  background: var(--bg);
-  min-height: 44px;
-  outline: none;
-}
-.pin-setup-row input:focus { border-color: var(--primary); }
+/* ── SETTINGS ── */
+.settings-hero{background:linear-gradient(135deg,var(--primary2),var(--primary));padding:52px 20px 20px;color:#fff}
+.settings-hero h2{font-family:'Lora',serif;font-size:20px;font-weight:700}
+.settings-section-label{font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin:18px 20px 8px}
+.settings-card{margin:0 16px;background:var(--card);border-radius:12px;overflow:hidden}
+.setting-row{background:var(--card);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);min-height:52px}
+.setting-row:last-child{border-bottom:none}
+.sr-label{font-size:14px;font-weight:700;color:var(--text)}
+.sr-sub{font-size:12px;color:var(--muted);margin-top:2px}
+.setting-row select{border:1.5px solid var(--border);border-radius:8px;padding:6px 10px;font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;color:var(--text);background:var(--bg);min-height:36px;outline:none}
+.pin-setup-row input{flex:1;padding:10px 14px;border:1.5px solid var(--border);border-radius:10px;font-family:'Nunito',sans-serif;font-size:18px;font-weight:700;text-align:center;letter-spacing:6px;color:var(--text);background:var(--bg);min-height:44px;outline:none;width:100%}
+.pin-setup-row input:focus{border-color:var(--primary)}
+.empty-state{text-align:center;padding:48px 20px;color:var(--muted);font-size:15px}
+.empty-state .es-icon{font-size:48px;margin-bottom:12px}
 </style>
 </head>
 <body>
 <div id="app">
 
-<!-- ═══════════════════ LOCK SCREEN ═══════════════════════════════ -->
+<!-- LOCK -->
 <div id="screen-lock" class="screen">
   <div class="lock-logo">🔤 WordWise</div>
   <div class="lock-sub">Enter your PIN to continue</div>
   <div class="lock-dots" id="lock-dots">
-    <div class="lock-dot" id="ld0"></div>
-    <div class="lock-dot" id="ld1"></div>
-    <div class="lock-dot" id="ld2"></div>
-    <div class="lock-dot" id="ld3"></div>
+    <div class="lock-dot" id="ld0"></div><div class="lock-dot" id="ld1"></div>
+    <div class="lock-dot" id="ld2"></div><div class="lock-dot" id="ld3"></div>
   </div>
   <div class="pin-pad">
     <button class="pin-key" onclick="pinKey('1')">1</button>
@@ -881,88 +215,69 @@ body {
     <button class="pin-key" onclick="pinKey('8')">8</button>
     <button class="pin-key" onclick="pinKey('9')">9</button>
     <button class="pin-key" onclick="pinKey('0')" style="grid-column:2">0</button>
-    <button class="pin-key del" onclick="pinDel()">⌫</button>
+    <button class="pin-key" onclick="pinDel()">⌫</button>
   </div>
 </div>
 
-<!-- ═══════════════════ HOME SCREEN ══════════════════════════════ -->
+<!-- HOME -->
 <div id="screen-home" class="screen">
   <div class="app-header">
     <div class="header-row">
-      <div>
-        <h1>🔤 WordWise</h1>
-        <div class="sub">Vocabulary Quiz</div>
-      </div>
+      <div><h1>🔤 WordWise</h1><div class="sub">Vocabulary Quiz</div></div>
       <div class="streak-badge" id="home-streak">🔥 0 days</div>
     </div>
   </div>
-
   <div class="home-stats-row">
-    <div class="stat-mini">
-      <div class="val" id="home-seen">0</div>
-      <div class="lbl">Words Seen</div>
-    </div>
-    <div class="stat-mini">
-      <div class="val" id="home-accuracy">—</div>
-      <div class="lbl">Accuracy</div>
-    </div>
-    <div class="stat-mini">
-      <div class="val" id="home-sessions">0</div>
-      <div class="lbl">Sessions</div>
-    </div>
+    <div class="stat-mini"><div class="val" id="home-seen">0</div><div class="lbl">Words Seen</div></div>
+    <div class="stat-mini"><div class="val" id="home-accuracy">—</div><div class="lbl">Accuracy</div></div>
+    <div class="stat-mini"><div class="val" id="home-sessions">0</div><div class="lbl">Sessions</div></div>
   </div>
-
-  <div class="home-action">
-    <div class="card" style="margin:14px 0 0;">
-      <div style="font-size:13px;font-weight:700;color:var(--muted);margin-bottom:8px;">TODAY'S CHALLENGE</div>
-      <div id="home-level-badge" class="level-badge" style="margin-bottom:12px;">📚 All Levels</div>
+  <div style="margin:14px 16px 0">
+    <div class="card" style="margin:0">
+      <div style="font-size:13px;font-weight:700;color:var(--muted);margin-bottom:10px">TODAY'S CHALLENGE</div>
+      <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+        <span class="diff-badge" id="home-diff-badge">📚 All</span>
+        <span class="diff-badge diff-Easy" id="home-type-badge">🔤 Definition</span>
+      </div>
       <button class="btn btn-primary" onclick="startQuiz()">Start Quiz 📝</button>
     </div>
   </div>
-
-  <!-- Word of the Day -->
-  <div class="card tip-card" id="wotd-card" style="margin-top:4px;">
-    <div style="font-size:11px;font-weight:800;color:var(--primary);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">✨ Word of the Day</div>
+  <div class="card tip-card" id="wotd-card" style="margin-top:4px">
+    <div style="font-size:11px;font-weight:800;color:var(--primary);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">✨ Word of the Day</div>
     <div class="tip-word" id="wotd-word">—</div>
-    <div style="margin:4px 0;"><span class="level-badge" id="wotd-badge" style="font-size:10px;"></span></div>
+    <div style="margin:4px 0"><span class="diff-badge" id="wotd-badge"></span></div>
     <div class="tip-def" id="wotd-def">—</div>
     <div class="tip-meta" id="wotd-ex">—</div>
   </div>
 </div>
 
-<!-- ═══════════════════ QUIZ SCREEN ══════════════════════════════ -->
+<!-- QUIZ -->
 <div id="screen-quiz" class="screen">
   <div class="quiz-top">
     <div class="quiz-progress-row">
       <div class="quiz-progress-label" id="quiz-qnum">1 / 10</div>
-      <div class="quiz-progress-track">
-        <div class="quiz-progress-fill" id="quiz-progress-fill" style="width:10%"></div>
-      </div>
-      <button onclick="showScreen('screen-home')" style="background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:18px;padding:4px 8px;border-radius:8px;cursor:pointer;">✕</button>
+      <div class="quiz-progress-track"><div class="quiz-progress-fill" id="quiz-progress-fill" style="width:10%"></div></div>
+      <button onclick="showScreen('screen-home')" style="background:rgba(255,255,255,.15);border:none;color:#fff;font-size:18px;padding:4px 8px;border-radius:8px;cursor:pointer">✕</button>
     </div>
+    <div class="quiz-type-tag" id="quiz-type-tag">Definition</div>
   </div>
-
   <div class="quiz-word-card">
     <span class="quiz-pos-tag" id="quiz-pos">adjective</span>
-    <div class="quiz-word" id="quiz-word">—</div>
-    <div class="quiz-example" id="quiz-example">—</div>
+    <div id="quiz-word-area"></div>
+    <div class="quiz-example" id="quiz-example"></div>
   </div>
-
-  <div class="quiz-question-label">What does this word mean?</div>
-
+  <div class="quiz-question-label" id="quiz-question-label">What does this word mean?</div>
   <div class="choices" id="choices-container"></div>
-
   <div class="quiz-feedback" id="quiz-feedback">
     <div class="fb-title" id="fb-title">—</div>
     <div id="fb-body">—</div>
   </div>
-
   <div class="quiz-next-btn" id="quiz-next-btn">
     <button class="btn btn-primary" id="next-btn-inner" onclick="nextQuestion()">Next Word →</button>
   </div>
 </div>
 
-<!-- ═══════════════════ SCORE SCREEN ═════════════════════════════ -->
+<!-- SCORE -->
 <div id="score-screen">
   <div id="confetti-container"></div>
   <div class="score-emoji" id="score-emoji">🎉</div>
@@ -976,27 +291,23 @@ body {
   </div>
 </div>
 
-<!-- ═══════════════════ WORDS SCREEN ═════════════════════════════ -->
+<!-- WORDS -->
 <div id="screen-words" class="screen">
   <div class="app-header">
-    <h1 style="font-family:'Lora',serif;font-size:20px;">📚 My Words</h1>
+    <h1 style="font-family:'Lora',serif;font-size:20px">📚 My Words</h1>
     <div class="sub" id="words-count-sub">—</div>
   </div>
-
   <div class="words-filters" id="words-filters">
-    <div class="filter-chip active" data-filter="all" onclick="setWordFilter('all',this)">All</div>
-    <div class="filter-chip" data-filter="TOEIC"  onclick="setWordFilter('TOEIC',this)">TOEIC</div>
-    <div class="filter-chip" data-filter="TOEFL"  onclick="setWordFilter('TOEFL',this)">TOEFL</div>
-    <div class="filter-chip" data-filter="GRE"    onclick="setWordFilter('GRE',this)">GRE</div>
-    <div class="filter-chip" data-filter="GMAT"   onclick="setWordFilter('GMAT',this)">GMAT</div>
-    <div class="filter-chip" data-filter="known"  onclick="setWordFilter('known',this)">✓ Known</div>
+    <div class="filter-chip active" data-filter="all"    onclick="setWordFilter('all',this)">All</div>
+    <div class="filter-chip" data-filter="Easy"          onclick="setWordFilter('Easy',this)">🟢 Easy</div>
+    <div class="filter-chip" data-filter="Medium"        onclick="setWordFilter('Medium',this)">🔵 Medium</div>
+    <div class="filter-chip" data-filter="Hard"          onclick="setWordFilter('Hard',this)">🟣 Hard</div>
+    <div class="filter-chip" data-filter="known"         onclick="setWordFilter('known',this)">✓ Known</div>
   </div>
-
   <div class="words-search">
     <span class="search-icon">🔍</span>
     <input type="text" id="words-search-input" placeholder="Search words…" oninput="renderWordList()" autocomplete="off">
   </div>
-
   <div class="word-list" id="word-list"></div>
 </div>
 
@@ -1005,67 +316,60 @@ body {
   <div class="modal-sheet">
     <div class="modal-handle"></div>
     <div class="modal-word" id="modal-word">—</div>
-    <div><span class="modal-pos" id="modal-pos">—</span> <span class="level-badge" id="modal-level" style="font-size:10px;"></span></div>
+    <div><span class="modal-pos" id="modal-pos">—</span> <span class="diff-badge" id="modal-diff"></span></div>
     <div class="modal-def" id="modal-def">—</div>
     <div class="modal-example" id="modal-example">—</div>
     <div class="modal-synonyms" id="modal-synonyms"></div>
+    <div class="modal-antonyms" id="modal-antonyms"></div>
     <div class="modal-actions">
-      <button class="btn btn-outline" id="modal-known-btn" onclick="toggleKnown()" style="flex:1;">Mark as Known ✓</button>
-      <button class="btn btn-primary" onclick="closeWordModal()" style="width:auto;padding:12px 18px;">Done</button>
+      <button class="btn btn-outline" id="modal-known-btn" onclick="toggleKnown()" style="flex:1">Mark as Known ✓</button>
+      <button class="btn btn-primary" onclick="closeWordModal()" style="width:auto;padding:12px 18px">Done</button>
     </div>
   </div>
 </div>
 
-<!-- ═══════════════════ STATS SCREEN ═════════════════════════════ -->
+<!-- STATS -->
 <div id="screen-stats" class="screen">
-  <div class="stats-hero">
-    <h2>📊 My Progress</h2>
-  </div>
-
+  <div class="stats-hero"><h2>📊 My Progress</h2></div>
   <div class="streak-row">
-    <div class="streak-card">
-      <div class="sc-val" id="stats-streak">0</div>
-      <div class="sc-lbl">🔥 Current Streak</div>
-    </div>
-    <div class="streak-card">
-      <div class="sc-val" id="stats-best">0</div>
-      <div class="sc-lbl">🏆 Best Streak</div>
-    </div>
-    <div class="streak-card">
-      <div class="sc-val" id="stats-total-words">0</div>
-      <div class="sc-lbl">📖 Words Seen</div>
-    </div>
+    <div class="streak-card"><div class="sc-val" id="stats-streak">0</div><div class="sc-lbl">🔥 Streak</div></div>
+    <div class="streak-card"><div class="sc-val" id="stats-best">0</div><div class="sc-lbl">🏆 Best</div></div>
+    <div class="streak-card"><div class="sc-val" id="stats-total-words">0</div><div class="sc-lbl">📖 Words</div></div>
   </div>
-
   <div class="chart-container">
-    <div class="chart-title">Accuracy by Level</div>
+    <div class="chart-title">Accuracy by Difficulty</div>
     <canvas id="stats-canvas"></canvas>
   </div>
-
-  <div style="font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin:4px 20px 10px;">Recent Sessions</div>
+  <div style="font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin:4px 20px 10px">Recent Sessions</div>
   <div class="sessions-list" id="sessions-list"></div>
 </div>
 
-<!-- ═══════════════════ SETTINGS SCREEN ══════════════════════════ -->
+<!-- SETTINGS -->
 <div id="screen-settings" class="screen">
-  <div class="settings-hero">
-    <h2>⚙️ Settings</h2>
-  </div>
+  <div class="settings-hero"><h2>⚙️ Settings</h2></div>
 
   <div class="settings-section-label">Quiz Preferences</div>
   <div class="settings-card">
     <div class="setting-row">
-      <div><div class="sr-label">Vocabulary Level</div><div class="sr-sub">Filter quiz words by exam</div></div>
-      <select id="setting-level" onchange="saveSetting('level',this.value)">
+      <div><div class="sr-label">Difficulty</div><div class="sr-sub">Filter words by difficulty level</div></div>
+      <select id="setting-diff" onchange="saveSetting('diff',this.value)">
         <option value="ALL">All Levels</option>
-        <option value="TOEIC">TOEIC</option>
-        <option value="TOEFL">TOEFL</option>
-        <option value="GRE">GRE</option>
-        <option value="GMAT">GMAT</option>
+        <option value="Easy">🟢 Easy</option>
+        <option value="Medium">🔵 Medium</option>
+        <option value="Hard">🟣 Hard</option>
       </select>
     </div>
     <div class="setting-row">
-      <div><div class="sr-label">Questions per Session</div><div class="sr-sub">How many words per quiz</div></div>
+      <div><div class="sr-label">Quiz Type</div><div class="sr-sub">What kind of questions to ask</div></div>
+      <select id="setting-type" onchange="saveSetting('quizType',this.value)">
+        <option value="definition">🔤 Definition</option>
+        <option value="synonym">🔄 Synonym</option>
+        <option value="antonym">↔️ Antonym</option>
+        <option value="analogy">🔗 Analogy</option>
+      </select>
+    </div>
+    <div class="setting-row">
+      <div><div class="sr-label">Questions per Session</div><div class="sr-sub">How many questions per quiz</div></div>
       <select id="setting-size" onchange="saveSetting('sessionSize',parseInt(this.value))">
         <option value="5">5</option>
         <option value="10" selected>10</option>
@@ -1076,22 +380,22 @@ body {
 
   <div class="settings-section-label">Security</div>
   <div class="settings-card">
-    <div class="setting-row" style="flex-direction:column;align-items:flex-start;gap:10px;">
-      <div class="sr-label" id="pin-setting-label">PIN Lock</div>
+    <div class="setting-row" style="flex-direction:column;align-items:flex-start;gap:10px">
+      <div class="sr-label">PIN Lock</div>
       <div class="sr-sub" id="pin-setting-sub">Set a 4-digit PIN to protect your progress</div>
-      <div class="pin-setup-row" style="width:100%;">
+      <div class="pin-setup-row" style="width:100%">
         <input type="password" id="pin-input" maxlength="4" inputmode="numeric" placeholder="····" autocomplete="new-password">
       </div>
-      <div style="display:flex;gap:8px;width:100%;">
-        <button class="btn btn-primary btn-sm" style="flex:1;" onclick="savePin()">Set PIN</button>
-        <button class="btn btn-danger btn-sm" style="flex:1;" onclick="clearPin()" id="clear-pin-btn">Remove PIN</button>
+      <div style="display:flex;gap:8px;width:100%">
+        <button class="btn btn-primary btn-sm" style="flex:1" onclick="savePin()">Set PIN</button>
+        <button class="btn btn-danger btn-sm" style="flex:1;display:none" onclick="clearPin()" id="clear-pin-btn">Remove PIN</button>
       </div>
     </div>
   </div>
 
   <div class="settings-section-label">Danger Zone</div>
   <div class="settings-card">
-    <div class="setting-row" style="flex-direction:column;align-items:flex-start;gap:10px;">
+    <div class="setting-row" style="flex-direction:column;align-items:flex-start;gap:10px">
       <div class="sr-label">Reset All Progress</div>
       <div class="sr-sub">Clears all sessions, word history, and stats</div>
       <button class="btn btn-danger" onclick="confirmReset()">Reset Progress 🗑️</button>
@@ -1099,760 +403,574 @@ body {
   </div>
 </div>
 
-<!-- ═══════════════════ TAB BAR ═══════════════════════════════════ -->
+<!-- TAB BAR -->
 <div id="tab-bar">
-  <div class="tab" id="tab-home" onclick="showScreen('screen-home')">
-    <div class="tab-icon">🏠</div>
-    <div>Home</div>
-  </div>
-  <div class="tab" id="tab-words" onclick="showScreen('screen-words')">
-    <div class="tab-icon">📚</div>
-    <div>Words</div>
-  </div>
-  <div class="tab-quiz-fab" onclick="startQuiz()">
-    <div class="fab-circle">📝</div>
-    <div class="fab-label">Quiz</div>
-  </div>
-  <div class="tab" id="tab-stats" onclick="showScreen('screen-stats')">
-    <div class="tab-icon">📊</div>
-    <div>Stats</div>
-  </div>
-  <div class="tab" id="tab-settings" onclick="showScreen('screen-settings')">
-    <div class="tab-icon">⚙️</div>
-    <div>Settings</div>
-  </div>
+  <div class="tab" id="tab-home"     onclick="showScreen('screen-home')"><div class="tab-icon">🏠</div><div>Home</div></div>
+  <div class="tab" id="tab-words"    onclick="showScreen('screen-words')"><div class="tab-icon">📚</div><div>Words</div></div>
+  <div class="tab-quiz-fab"          onclick="startQuiz()"><div class="fab-circle">📝</div><div class="fab-label">Quiz</div></div>
+  <div class="tab" id="tab-stats"    onclick="showScreen('screen-stats')"><div class="tab-icon">📊</div><div>Stats</div></div>
+  <div class="tab" id="tab-settings" onclick="showScreen('screen-settings')"><div class="tab-icon">⚙️</div><div>Settings</div></div>
 </div>
-
 <div id="toast"></div>
 
 <script>
-// ════════════════════════════════════════════════════════════════
-// WORD BANK  (~530 words across TOEIC / TOEFL / GRE / GMAT)
-// ════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════
+// WORD BANK  (diff: Easy / Medium / Hard, + ant: antonyms)
+// ════════════════════════════════════════════════════════════
 const WORDS = [
-// ── TOEIC ──────────────────────────────────────────────────────
-{id:1,  word:"acquire",      pos:"verb",  def:"To gain possession of something, especially through effort.",          ex:"The company plans to acquire a smaller firm to expand its market share.",     syn:["obtain","gain","procure"],       level:"TOEIC"},
-{id:2,  word:"allocate",     pos:"verb",  def:"To distribute resources or duties for a specific purpose.",            ex:"The manager will allocate funds to each department next quarter.",            syn:["assign","distribute","apportion"],level:"TOEIC"},
-{id:3,  word:"revenue",      pos:"noun",  def:"Income generated from business activities.",                           ex:"The company's revenue increased by 15% this year.",                           syn:["income","earnings","proceeds"],  level:"TOEIC"},
-{id:4,  word:"comply",       pos:"verb",  def:"To act in accordance with a request or regulation.",                   ex:"All employees must comply with the new safety guidelines.",                    syn:["conform","adhere","obey"],       level:"TOEIC"},
-{id:5,  word:"reimburse",    pos:"verb",  def:"To pay back money spent by someone.",                                  ex:"The company will reimburse travel expenses within 30 days.",                   syn:["repay","compensate","refund"],   level:"TOEIC"},
-{id:6,  word:"negotiate",    pos:"verb",  def:"To discuss something formally in order to reach an agreement.",        ex:"The two companies spent months negotiating the merger terms.",                  syn:["discuss","bargain","mediate"],   level:"TOEIC"},
-{id:7,  word:"implement",    pos:"verb",  def:"To put a plan or system into action.",                                  ex:"The new policy will be implemented starting next month.",                      syn:["execute","apply","enact"],       level:"TOEIC"},
-{id:8,  word:"surplus",      pos:"noun",  def:"An amount left over when requirements have been met.",                 ex:"The factory produced a surplus of goods that had to be stored.",                syn:["excess","remainder","overflow"], level:"TOEIC"},
-{id:9,  word:"deficit",      pos:"noun",  def:"The amount by which something falls short, especially money.",         ex:"The country has been running a trade deficit for the past decade.",             syn:["shortfall","deficiency","gap"],  level:"TOEIC"},
-{id:10, word:"fluctuate",    pos:"verb",  def:"To rise and fall irregularly in number or amount.",                    ex:"Oil prices tend to fluctuate based on global supply and demand.",               syn:["vary","oscillate","waver"],      level:"TOEIC"},
-{id:11, word:"incentive",    pos:"noun",  def:"Something that motivates or encourages someone to do something.",      ex:"The company offered bonuses as an incentive for higher productivity.",           syn:["motivation","stimulus","reward"],level:"TOEIC"},
-{id:12, word:"liability",    pos:"noun",  def:"The state of being legally responsible for something.",                ex:"The company's liabilities exceeded its assets, causing concern.",                syn:["obligation","debt","responsibility"],level:"TOEIC"},
-{id:13, word:"merger",       pos:"noun",  def:"The combination of two companies into one.",                           ex:"The merger between the two banks created the largest institution in the region.",syn:["consolidation","union","amalgamation"],level:"TOEIC"},
-{id:14, word:"overhead",     pos:"noun",  def:"Ongoing business expenses not directly tied to products or services.", ex:"High overhead costs forced the startup to reduce staff.",                       syn:["expenses","costs","operating costs"],level:"TOEIC"},
-{id:15, word:"procurement",  pos:"noun",  def:"The action of obtaining or purchasing goods and services.",            ex:"The procurement team secured better prices from suppliers.",                    syn:["acquisition","purchasing","sourcing"],level:"TOEIC"},
-{id:16, word:"subsidy",      pos:"noun",  def:"Money granted by the government to keep prices low.",                  ex:"The government offered subsidies to farmers during the drought.",                syn:["grant","allowance","support"],   level:"TOEIC"},
-{id:17, word:"tangible",     pos:"adj",   def:"Clear and definite; real and not imaginary.",                          ex:"The new policy showed tangible results within the first quarter.",               syn:["concrete","real","palpable"],    level:"TOEIC"},
-{id:18, word:"outsource",    pos:"verb",  def:"To contract work out to an external organization.",                    ex:"Many firms outsource customer service to reduce costs.",                        syn:["contract out","delegate","subcontract"],level:"TOEIC"},
-{id:19, word:"inventory",    pos:"noun",  def:"A complete list of goods or stock held by a business.",                ex:"The store conducts a monthly inventory to track its products.",                  syn:["stock","supply","stockpile"],    level:"TOEIC"},
-{id:20, word:"benchmark",    pos:"noun",  def:"A standard or point of reference for comparison.",                    ex:"The team used industry leaders as a benchmark for performance.",                syn:["standard","criterion","reference"],level:"TOEIC"},
-{id:21, word:"quarterly",    pos:"adj",   def:"Done or occurring four times a year.",                                 ex:"The board holds quarterly meetings to review financial performance.",            syn:["four times yearly","seasonal"],  level:"TOEIC"},
-{id:22, word:"fiscal",       pos:"adj",   def:"Relating to government or public revenue.",                            ex:"The fiscal year ends in December for most companies.",                          syn:["financial","economic","monetary"],level:"TOEIC"},
-{id:23, word:"leverage",     pos:"noun",  def:"The use of borrowed money or resources to increase potential gain.",   ex:"The firm used leverage to finance its expansion.",                              syn:["influence","power","advantage"], level:"TOEIC"},
-{id:24, word:"deduct",       pos:"verb",  def:"To subtract an amount from a total.",                                  ex:"You can deduct business travel expenses from your taxes.",                      syn:["subtract","remove","withhold"],  level:"TOEIC"},
-{id:25, word:"invoice",      pos:"noun",  def:"A list of goods or services with a statement of the sum due.",         ex:"Please send the invoice to our accounting department.",                         syn:["bill","statement","account"],    level:"TOEIC"},
-{id:26, word:"warranty",     pos:"noun",  def:"A written guarantee to repair or replace a product if faulty.",        ex:"The appliance comes with a two-year warranty.",                                 syn:["guarantee","assurance","pledge"],level:"TOEIC"},
-{id:27, word:"collateral",   pos:"noun",  def:"Property pledged as security for repayment of a loan.",               ex:"The bank required real estate as collateral for the loan.",                     syn:["security","guarantee","pledge"],level:"TOEIC"},
-{id:28, word:"arbitration",  pos:"noun",  def:"A process of resolving disputes outside of court.",                   ex:"The contract required disputes to go to arbitration.",                          syn:["mediation","negotiation","settlement"],level:"TOEIC"},
-{id:29, word:"agenda",       pos:"noun",  def:"A list of items to be discussed at a meeting.",                        ex:"The chair distributed the agenda before the meeting started.",                  syn:["schedule","plan","program"],     level:"TOEIC"},
-{id:30, word:"consensus",    pos:"noun",  def:"General agreement among a group.",                                     ex:"The team reached a consensus on the new strategy.",                             syn:["agreement","accord","unity"],    level:"TOEIC"},
-{id:31, word:"delegate",     pos:"verb",  def:"To entrust a task to another person.",                                 ex:"A good manager knows how to delegate responsibilities effectively.",            syn:["assign","entrust","transfer"],   level:"TOEIC"},
-{id:32, word:"prospective",  pos:"adj",   def:"Expected or likely to happen in the future.",                          ex:"The company met with prospective clients at the trade show.",                   syn:["potential","future","anticipated"],level:"TOEIC"},
-{id:33, word:"viable",       pos:"adj",   def:"Capable of working successfully; feasible.",                           ex:"The team discussed whether the new product was commercially viable.",            syn:["feasible","workable","practical"],level:"TOEIC"},
-{id:34, word:"turnover",     pos:"noun",  def:"The rate at which employees leave a workforce and are replaced.",      ex:"High employee turnover can damage a company's culture.",                        syn:["attrition","churn","rotation"],  level:"TOEIC"},
-{id:35, word:"depreciation", pos:"noun",  def:"A reduction in the value of an asset over time.",                     ex:"The accountant calculated the annual depreciation of the equipment.",            syn:["devaluation","decrease","decline"],level:"TOEIC"},
-{id:36, word:"audit",        pos:"noun",  def:"An official inspection of accounts by an independent body.",           ex:"The company passed its annual financial audit without issues.",                  syn:["inspection","examination","review"],level:"TOEIC"},
-{id:37, word:"dividends",    pos:"noun",  def:"A portion of profits paid to shareholders.",                           ex:"The company declared dividends of $1.50 per share.",                            syn:["share","payout","return"],       level:"TOEIC"},
-{id:38, word:"streamline",   pos:"verb",  def:"To make a process more efficient and effective.",                      ex:"The new software helped streamline the ordering process.",                      syn:["simplify","optimize","improve"], level:"TOEIC"},
-// ── TOEFL ──────────────────────────────────────────────────────
-{id:101,word:"ambiguous",    pos:"adj",   def:"Open to more than one interpretation; not clear.",                    ex:"The professor's ambiguous instructions confused the students.",                  syn:["unclear","vague","equivocal"],   level:"TOEFL"},
-{id:102,word:"empirical",    pos:"adj",   def:"Based on observation or experiment rather than theory.",               ex:"The scientist relied on empirical evidence to support her hypothesis.",          syn:["observed","experimental","factual"],level:"TOEFL"},
-{id:103,word:"hypothesis",   pos:"noun",  def:"A proposed explanation made on the basis of limited evidence.",        ex:"The researchers developed a hypothesis to explain the unusual findings.",        syn:["theory","supposition","premise"],level:"TOEFL"},
-{id:104,word:"infer",        pos:"verb",  def:"To deduce a conclusion from evidence and reasoning.",                  ex:"From the data, scientists can infer a connection between diet and health.",       syn:["deduce","conclude","reason"],    level:"TOEFL"},
-{id:105,word:"paradigm",     pos:"noun",  def:"A typical example or pattern of something; a model.",                 ex:"The discovery created a paradigm shift in scientific thinking.",                 syn:["model","framework","standard"],  level:"TOEFL"},
-{id:106,word:"inherent",     pos:"adj",   def:"Existing as a natural or permanent part of something.",               ex:"There is an inherent risk in every investment decision.",                       syn:["intrinsic","innate","built-in"], level:"TOEFL"},
-{id:107,word:"mitigate",     pos:"verb",  def:"To make something less severe, serious, or painful.",                 ex:"Planting trees can help mitigate the effects of climate change.",               syn:["reduce","lessen","alleviate"],   level:"TOEFL"},
-{id:108,word:"proliferate",  pos:"verb",  def:"To increase rapidly in numbers.",                                     ex:"Social media platforms have proliferated over the past decade.",                 syn:["multiply","expand","spread"],    level:"TOEFL"},
-{id:109,word:"constitute",   pos:"verb",  def:"To be a part or element of something; to make up.",                   ex:"Women constitute more than half of the university's enrollment.",               syn:["form","comprise","represent"],   level:"TOEFL"},
-{id:110,word:"implication",  pos:"noun",  def:"The conclusion that can be drawn from something though not explicit.", ex:"The study has important implications for public health policy.",                syn:["consequence","inference","meaning"],level:"TOEFL"},
-{id:111,word:"subsequent",   pos:"adj",   def:"Coming after or following something.",                                 ex:"Subsequent research confirmed the original findings.",                          syn:["following","later","succeeding"],level:"TOEFL"},
-{id:112,word:"arbitrary",    pos:"adj",   def:"Based on random choice or personal whim, not reason.",                ex:"The teacher's grading seemed arbitrary and inconsistent.",                       syn:["random","capricious","whimsical"],level:"TOEFL"},
-{id:113,word:"correlate",    pos:"verb",  def:"To have a mutual relationship or connection.",                         ex:"Exercise frequency often correlates with better mental health outcomes.",         syn:["relate","connect","link"],       level:"TOEFL"},
-{id:114,word:"discrete",     pos:"adj",   def:"Individually separate and distinct.",                                  ex:"The experiment had several discrete stages that had to be completed in order.",  syn:["separate","distinct","individual"],level:"TOEFL"},
-{id:115,word:"phenomena",    pos:"noun",  def:"Facts or situations observed to exist or happen.",                    ex:"The northern lights are among nature's most stunning phenomena.",                syn:["events","occurrences","facts"],  level:"TOEFL"},
-{id:116,word:"hierarchy",    pos:"noun",  def:"A system in which members are ranked according to status.",           ex:"The corporate hierarchy determines who reports to whom.",                       syn:["ranking","order","chain"],       level:"TOEFL"},
-{id:117,word:"catalyst",     pos:"noun",  def:"An event or person that causes change.",                              ex:"The invention of the internet was a catalyst for global communication.",         syn:["trigger","stimulus","spark"],    level:"TOEFL"},
-{id:118,word:"coherent",     pos:"adj",   def:"Logical and consistent; clearly expressed.",                          ex:"The student wrote a coherent and well-structured essay.",                       syn:["logical","consistent","clear"],  level:"TOEFL"},
-{id:119,word:"diminish",     pos:"verb",  def:"To make or become less.",                                             ex:"The pain began to diminish after she took the medication.",                     syn:["reduce","decrease","lessen"],    level:"TOEFL"},
-{id:120,word:"elaborate",    pos:"verb",  def:"To explain in more detail.",                                          ex:"Could you elaborate on your argument with specific examples?",                  syn:["expand","explain","detail"],     level:"TOEFL"},
-{id:121,word:"explicit",     pos:"adj",   def:"Stated clearly and in detail, leaving no room for confusion.",         ex:"The contract contained explicit terms about payment deadlines.",                 syn:["clear","direct","precise"],      level:"TOEFL"},
-{id:122,word:"extract",      pos:"verb",  def:"To remove or obtain something by effort or force.",                   ex:"Scientists can extract DNA from ancient bones for analysis.",                    syn:["remove","draw out","derive"],    level:"TOEFL"},
-{id:123,word:"fluctuation",  pos:"noun",  def:"An irregular rise and fall in number or amount.",                     ex:"Temperature fluctuations in the desert are extreme.",                           syn:["variation","change","shift"],    level:"TOEFL"},
-{id:124,word:"formulate",    pos:"verb",  def:"To create or prepare something carefully.",                           ex:"The team formulated a plan to address the growing problem.",                    syn:["create","devise","develop"],     level:"TOEFL"},
-{id:125,word:"predominant",  pos:"adj",   def:"Present as the strongest element; prevailing.",                       ex:"English is the predominant language of international business.",                 syn:["dominant","prevailing","chief"], level:"TOEFL"},
-{id:126,word:"regulate",     pos:"verb",  def:"To control something by means of rules or laws.",                     ex:"The government regulates the food industry to ensure safety.",                  syn:["control","govern","oversee"],    level:"TOEFL"},
-{id:127,word:"supplement",   pos:"verb",  def:"To add something to improve or complete it.",                         ex:"He takes vitamins to supplement his diet.",                                     syn:["add to","enhance","augment"],    level:"TOEFL"},
-{id:128,word:"inevitably",   pos:"adv",   def:"As is certain to happen; unavoidably.",                               ex:"Any new system inevitably contains some flaws at first.",                       syn:["unavoidably","certainly","inescapably"],level:"TOEFL"},
-{id:129,word:"coincide",     pos:"verb",  def:"To occur at the same time or place.",                                 ex:"The two events coincide with the city's annual festival.",                      syn:["concur","overlap","correspond"], level:"TOEFL"},
-{id:130,word:"accumulate",   pos:"verb",  def:"To gather or collect over a period of time.",                         ex:"Over years, dust can accumulate in ventilation systems.",                       syn:["collect","amass","gather"],      level:"TOEFL"},
-{id:131,word:"attribute",    pos:"verb",  def:"To regard something as being caused by something else.",              ex:"Historians attribute the city's success to its location on the trade route.",   syn:["ascribe","credit","assign"],     level:"TOEFL"},
-{id:132,word:"compel",       pos:"verb",  def:"To force someone to do something.",                                   ex:"A sense of duty compelled him to return the lost wallet.",                     syn:["force","oblige","require"],      level:"TOEFL"},
-{id:133,word:"contend",      pos:"verb",  def:"To assert as a position in an argument.",                             ex:"Critics contend that the policy will harm economic growth.",                    syn:["argue","claim","assert"],        level:"TOEFL"},
-{id:134,word:"conventional", pos:"adj",   def:"Based on or in accordance with what is generally done.",              ex:"The artist rejected conventional techniques in favor of her own style.",         syn:["traditional","standard","typical"],level:"TOEFL"},
-{id:135,word:"deplete",      pos:"verb",  def:"To reduce or exhaust the supply of something.",                       ex:"Overfishing has depleted many ocean species.",                                  syn:["exhaust","drain","reduce"],      level:"TOEFL"},
-{id:136,word:"diverge",      pos:"verb",  def:"To separate and go in different directions.",                         ex:"The two theories began to diverge on the question of origins.",                  syn:["separate","split","differ"],     level:"TOEFL"},
-{id:137,word:"integrate",    pos:"verb",  def:"To combine parts so they work together.",                             ex:"The new software integrates smoothly with existing systems.",                   syn:["combine","merge","unify"],       level:"TOEFL"},
-{id:138,word:"manifest",     pos:"verb",  def:"To display or show clearly.",                                         ex:"Stress can manifest in physical symptoms like headaches.",                      syn:["show","reveal","display"],       level:"TOEFL"},
-{id:139,word:"negligible",   pos:"adj",   def:"So small or unimportant as to be not worth considering.",             ex:"The margin of error was negligible and did not affect the results.",            syn:["insignificant","trivial","minimal"],level:"TOEFL"},
-{id:140,word:"parallel",     pos:"adj",   def:"Occurring or existing at the same time or in a similar way.",         ex:"The two studies ran parallel to each other and reached similar conclusions.",    syn:["corresponding","similar","equivalent"],level:"TOEFL"},
-// ── GRE ────────────────────────────────────────────────────────
-{id:201,word:"acrimony",     pos:"noun",  def:"Bitterness or ill feeling.",                                          ex:"The divorce proceedings were marked by acrimony between both parties.",         syn:["bitterness","hostility","rancor"],level:"GRE"},
-{id:202,word:"loquacious",   pos:"adj",   def:"Tending to talk a great deal; talkative.",                            ex:"The loquacious salesman barely let the customer speak.",                        syn:["talkative","garrulous","verbose"],level:"GRE"},
-{id:203,word:"perfidious",   pos:"adj",   def:"Deceitful and untrustworthy.",                                        ex:"The perfidious spy had been betraying secrets for years.",                      syn:["treacherous","disloyal","deceitful"],level:"GRE"},
-{id:204,word:"ubiquitous",   pos:"adj",   def:"Present, appearing, or found everywhere.",                            ex:"Smartphones have become ubiquitous in modern society.",                         syn:["omnipresent","pervasive","universal"],level:"GRE"},
-{id:205,word:"ephemeral",    pos:"adj",   def:"Lasting for a very short time.",                                      ex:"The beauty of cherry blossoms is ephemeral, lasting only days.",                syn:["fleeting","transient","momentary"],level:"GRE"},
-{id:206,word:"obdurate",     pos:"adj",   def:"Stubbornly refusing to change one's opinion.",                        ex:"Despite the evidence, he remained obdurate in his position.",                   syn:["stubborn","inflexible","unyielding"],level:"GRE"},
-{id:207,word:"equivocate",   pos:"verb",  def:"To use ambiguous language to conceal the truth.",                    ex:"The politician equivocated when asked about his involvement.",                   syn:["hedge","evade","prevaricate"],   level:"GRE"},
-{id:208,word:"enervate",     pos:"verb",  def:"To weaken or drain of energy.",                                       ex:"The long illness had enervated him completely.",                                syn:["weaken","debilitate","exhaust"], level:"GRE"},
-{id:209,word:"pellucid",     pos:"adj",   def:"Translucently clear; easily understood.",                             ex:"The professor's pellucid explanation made the concept easy to grasp.",          syn:["clear","transparent","lucid"],   level:"GRE"},
-{id:210,word:"recondite",    pos:"adj",   def:"Not known by many people; obscure.",                                  ex:"The historian specialized in recondite areas of medieval scholarship.",         syn:["obscure","esoteric","abstruse"], level:"GRE"},
-{id:211,word:"propitious",   pos:"adj",   def:"Giving or indicating a good chance of success; favorable.",           ex:"The weather was propitious for the outdoor ceremony.",                          syn:["favorable","auspicious","promising"],level:"GRE"},
-{id:212,word:"dilettante",   pos:"noun",  def:"A person who cultivates an area without real commitment.",            ex:"He was a dilettante in philosophy, reading only popular books.",                 syn:["amateur","dabbler","nonexpert"], level:"GRE"},
-{id:213,word:"vituperate",   pos:"verb",  def:"To blame or insult someone in strong or violent language.",           ex:"The critic vituperated the author in his scathing review.",                     syn:["berate","scold","denounce"],     level:"GRE"},
-{id:214,word:"laconic",      pos:"adj",   def:"Using very few words; brief and concise.",                            ex:"His laconic reply told us everything: 'No.'",                                   syn:["brief","concise","terse"],       level:"GRE"},
-{id:215,word:"sycophant",    pos:"noun",  def:"A person who flatters to gain favor.",                                ex:"He surrounded himself with sycophants who never challenged him.",               syn:["flatterer","toady","yes-man"],   level:"GRE"},
-{id:216,word:"tendentious",  pos:"adj",   def:"Promoting a particular cause or point of view.",                      ex:"The documentary was criticized for being tendentious and one-sided.",           syn:["biased","partial","slanted"],    level:"GRE"},
-{id:217,word:"impecunious",  pos:"adj",   def:"Having little or no money.",                                          ex:"He grew up impecunious but became one of the wealthiest men of his era.",       syn:["poor","penniless","destitute"],  level:"GRE"},
-{id:218,word:"garrulous",    pos:"adj",   def:"Excessively talkative, especially on trivial matters.",               ex:"The garrulous neighbor talked for an hour without stopping.",                   syn:["talkative","loquacious","chatty"],level:"GRE"},
-{id:219,word:"inimical",     pos:"adj",   def:"Tending to obstruct or harm; unfriendly.",                            ex:"The cold climate was inimical to tropical plant growth.",                       syn:["hostile","harmful","adverse"],   level:"GRE"},
-{id:220,word:"pernicious",   pos:"adj",   def:"Having a harmful effect in a gradual or subtle way.",                 ex:"The pernicious effects of misinformation can take years to reverse.",           syn:["harmful","destructive","damaging"],level:"GRE"},
-{id:221,word:"querulous",    pos:"adj",   def:"Complaining in a petulant or whining manner.",                        ex:"The querulous patient demanded to see a different doctor.",                     syn:["complaining","whiny","peevish"], level:"GRE"},
-{id:222,word:"venal",        pos:"adj",   def:"Showing or motivated by susceptibility to bribery.",                  ex:"The venal official accepted bribes in exchange for favorable decisions.",        syn:["corrupt","bribable","dishonest"],level:"GRE"},
-{id:223,word:"magnanimous",  pos:"adj",   def:"Very generous or forgiving, especially toward a rival.",              ex:"She was magnanimous in victory, congratulating her opponent warmly.",            syn:["generous","noble","charitable"], level:"GRE"},
-{id:224,word:"temerity",     pos:"noun",  def:"Excessive confidence or boldness; audacity.",                         ex:"He had the temerity to question the CEO's decision publicly.",                   syn:["audacity","boldness","nerve"],   level:"GRE"},
-{id:225,word:"truculent",    pos:"adj",   def:"Eager or quick to argue or fight; aggressively defiant.",             ex:"The truculent student challenged every point the professor made.",               syn:["aggressive","combative","belligerent"],level:"GRE"},
-{id:226,word:"meretricious", pos:"adj",   def:"Apparently attractive but having no real value.",                     ex:"The meretricious packaging hid a mediocre product.",                            syn:["flashy","showy","specious"],     level:"GRE"},
-{id:227,word:"recalcitrant", pos:"adj",   def:"Having an obstinately uncooperative attitude.",                       ex:"The recalcitrant prisoner refused to follow any prison rules.",                  syn:["defiant","stubborn","unruly"],   level:"GRE"},
-{id:228,word:"supercilious", pos:"adj",   def:"Behaving as if one is superior to others.",                           ex:"Her supercilious attitude alienated her colleagues.",                           syn:["arrogant","condescending","haughty"],level:"GRE"},
-{id:229,word:"venerate",     pos:"verb",  def:"To regard with great respect and reverence.",                         ex:"The community venerated their founder as a saintly figure.",                    syn:["revere","respect","honor"],      level:"GRE"},
-{id:230,word:"placate",      pos:"verb",  def:"To make someone less angry or upset.",                                ex:"The manager tried to placate the angry customer with a discount.",               syn:["appease","calm","pacify"],       level:"GRE"},
-{id:231,word:"erudite",      pos:"adj",   def:"Having or showing great knowledge or learning.",                      ex:"The erudite professor could speak on almost any academic subject.",              syn:["learned","scholarly","knowledgeable"],level:"GRE"},
-{id:232,word:"insipid",      pos:"adj",   def:"Lacking flavor; not interesting or exciting.",                        ex:"The speech was so insipid that half the audience fell asleep.",                 syn:["bland","dull","tasteless"],      level:"GRE"},
-{id:233,word:"laud",         pos:"verb",  def:"To praise someone or something highly.",                              ex:"Critics lauded the director's latest film as a masterpiece.",                   syn:["praise","extol","commend"],      level:"GRE"},
-{id:234,word:"mendacious",   pos:"adj",   def:"Not telling the truth; lying.",                                       ex:"The mendacious witness contradicted herself several times.",                    syn:["dishonest","deceitful","lying"],  level:"GRE"},
-{id:235,word:"nefarious",    pos:"adj",   def:"Wicked or criminal.",                                                 ex:"The villain's nefarious plan was foiled by the detective.",                     syn:["wicked","evil","villainous"],    level:"GRE"},
-{id:236,word:"obsequious",   pos:"adj",   def:"Obedient to an excessive degree; fawning.",                           ex:"The obsequious assistant agreed with everything the boss said.",                 syn:["servile","fawning","sycophantic"],level:"GRE"},
-{id:237,word:"ostentation",  pos:"noun",  def:"Pretentious display intended to impress others.",                     ex:"The billionaire's ostentation was evident in his fleet of yachts.",             syn:["showiness","flamboyance","display"],level:"GRE"},
-{id:238,word:"penurious",    pos:"adj",   def:"Extremely poor; unwilling to spend money.",                           ex:"He led a penurious existence despite his vast inherited wealth.",                syn:["miserly","stingy","poor"],       level:"GRE"},
-{id:239,word:"polemic",      pos:"noun",  def:"A strong verbal or written attack on someone's opinions.",            ex:"Her polemic against the health industry sparked national debate.",               syn:["attack","criticism","diatribe"], level:"GRE"},
-{id:240,word:"diffident",    pos:"adj",   def:"Modest or shy due to a lack of self-confidence.",                     ex:"The diffident student rarely raised her hand in class.",                        syn:["shy","timid","modest"],          level:"GRE"},
-{id:241,word:"intransigent", pos:"adj",   def:"Unwilling to change one's views or agree to compromise.",             ex:"The union was intransigent during the negotiations.",                           syn:["stubborn","uncompromising","inflexible"],level:"GRE"},
-{id:242,word:"repudiate",    pos:"verb",  def:"To refuse to accept or support something.",                           ex:"The candidate repudiated the inflammatory remarks made by his supporters.",     syn:["reject","deny","disavow"],       level:"GRE"},
-{id:243,word:"specious",     pos:"adj",   def:"Superficially plausible but actually wrong.",                         ex:"His specious argument sounded convincing but had no factual basis.",            syn:["misleading","fallacious","deceptive"],level:"GRE"},
-{id:244,word:"torpor",       pos:"noun",  def:"A state of mental or physical inactivity; lethargy.",                 ex:"The long winter kept the whole town in a kind of torpor.",                     syn:["lethargy","sluggishness","inertia"],level:"GRE"},
-{id:245,word:"wanton",       pos:"adj",   def:"Deliberate and unprovoked; shamefully excessive.",                    ex:"The soldiers' wanton destruction of the village shocked the world.",             syn:["gratuitous","deliberate","reckless"],level:"GRE"},
-{id:246,word:"amalgamate",   pos:"verb",  def:"To combine or unite to form one organization or structure.",          ex:"The two departments amalgamated to improve efficiency.",                         syn:["merge","combine","unify"],       level:"GRE"},
-{id:247,word:"cogent",       pos:"adj",   def:"Clear, logical, and convincing.",                                     ex:"She made a cogent argument for policy reform.",                                 syn:["convincing","compelling","persuasive"],level:"GRE"},
-{id:248,word:"daunt",        pos:"verb",  def:"To make someone feel intimidated or apprehensive.",                   ex:"The scale of the project did not daunt her experienced team.",                  syn:["intimidate","discourage","frighten"],level:"GRE"},
-{id:249,word:"furtive",      pos:"adj",   def:"Attempting to avoid notice; secretive.",                              ex:"He cast a furtive glance over his shoulder before entering.",                   syn:["secretive","stealthy","surreptitious"],level:"GRE"},
-{id:250,word:"gainsay",      pos:"verb",  def:"To deny or contradict.",                                              ex:"No one could gainsay the evidence presented in court.",                         syn:["deny","contradict","dispute"],   level:"GRE"},
-// ── GMAT ───────────────────────────────────────────────────────
-{id:301,word:"arbitrage",    pos:"noun",  def:"Buying and selling in different markets to profit from price differences.",ex:"Currency arbitrage takes advantage of exchange rate variations.",           syn:["speculation","trading","profiteering"],level:"GMAT"},
-{id:302,word:"amortize",     pos:"verb",  def:"To gradually write off the initial cost of an asset.",                ex:"The company decided to amortize the cost of the equipment over ten years.",    syn:["pay off","reduce","write down"],  level:"GMAT"},
-{id:303,word:"extrapolate",  pos:"verb",  def:"To extend existing conclusions into new territory.",                   ex:"From the data, we can extrapolate future trends in consumer spending.",         syn:["extend","project","infer"],      level:"GMAT"},
-{id:304,word:"optimize",     pos:"verb",  def:"To make the best use of a situation or resource.",                     ex:"The consultant was hired to optimize the supply chain process.",                syn:["maximize","enhance","improve"],  level:"GMAT"},
-{id:305,word:"synergy",      pos:"noun",  def:"Interaction producing a combined effect greater than the sum of parts.", ex:"The merger created synergy that reduced overall costs significantly.",          syn:["cooperation","collaboration","combined effect"],level:"GMAT"},
-{id:306,word:"feasibility",  pos:"noun",  def:"The state of being possible to do easily or conveniently.",            ex:"The team conducted a feasibility study before approving the project.",          syn:["practicability","viability","possibility"],level:"GMAT"},
-{id:307,word:"magnitude",    pos:"noun",  def:"The great size or extent of something.",                               ex:"The magnitude of the financial losses shocked investors worldwide.",             syn:["scale","size","extent"],         level:"GMAT"},
-{id:308,word:"mitigate",     pos:"verb",  def:"To make less severe or serious.",                                      ex:"Diversifying investments can mitigate financial risk.",                         syn:["reduce","lessen","alleviate"],   level:"GMAT"},
-{id:309,word:"pervasive",    pos:"adj",   def:"Spreading widely throughout an area or group.",                        ex:"The pervasive use of mobile devices has changed business communication.",       syn:["widespread","ubiquitous","extensive"],level:"GMAT"},
-{id:310,word:"rectify",      pos:"verb",  def:"To put right something that was wrong.",                               ex:"Management moved quickly to rectify the accounting error.",                     syn:["correct","fix","remedy"],        level:"GMAT"},
-{id:311,word:"salient",      pos:"adj",   def:"Most noticeable or important.",                                        ex:"The consultant highlighted the salient points of the financial report.",        syn:["notable","prominent","key"],     level:"GMAT"},
-{id:312,word:"scrutinize",   pos:"verb",  def:"To examine or inspect closely and thoroughly.",                        ex:"Auditors scrutinized every line of the company's accounts.",                   syn:["examine","inspect","analyze"],   level:"GMAT"},
-{id:313,word:"sustain",      pos:"verb",  def:"To cause to continue for an extended period.",                         ex:"The company struggled to sustain growth during the economic downturn.",         syn:["maintain","continue","support"], level:"GMAT"},
-{id:314,word:"volatile",     pos:"adj",   def:"Liable to change rapidly and unpredictably.",                          ex:"The volatile market made investors hesitant to commit funds.",                  syn:["unstable","unpredictable","fluctuating"],level:"GMAT"},
-{id:315,word:"substantiate", pos:"verb",  def:"To provide evidence to support or prove the truth of something.",     ex:"The audit failed to substantiate the company's revenue claims.",                syn:["prove","verify","confirm"],      level:"GMAT"},
-{id:316,word:"convoluted",   pos:"adj",   def:"Extremely complex and difficult to follow.",                           ex:"The convoluted tax code is difficult for most people to understand.",           syn:["complex","complicated","intricate"],level:"GMAT"},
-{id:317,word:"corroborate",  pos:"verb",  def:"To confirm or support a statement with evidence.",                     ex:"The witness testimony corroborated the forensic findings.",                     syn:["confirm","verify","support"],    level:"GMAT"},
-{id:318,word:"dichotomy",    pos:"noun",  def:"A division or contrast between two things that are opposites.",        ex:"There is a clear dichotomy between the company's stated values and its actions.",syn:["division","contrast","split"],  level:"GMAT"},
-{id:319,word:"enumerate",    pos:"verb",  def:"To mention a number of things one by one.",                            ex:"The report enumerates five key risks facing the business.",                     syn:["list","itemize","specify"],      level:"GMAT"},
-{id:320,word:"insolvent",    pos:"adj",   def:"Unable to pay debts; bankrupt.",                                       ex:"The firm was declared insolvent after failing to meet its obligations.",        syn:["bankrupt","broke","ruined"],     level:"GMAT"},
-{id:321,word:"juxtapose",    pos:"verb",  def:"To place side by side for comparison.",                                ex:"The report juxtaposed the two strategies to highlight their differences.",      syn:["contrast","compare","place alongside"],level:"GMAT"},
-{id:322,word:"lucrative",    pos:"adj",   def:"Producing a great deal of profit.",                                    ex:"Consulting proved to be a lucrative career for the experienced engineer.",      syn:["profitable","rewarding","gainful"],level:"GMAT"},
-{id:323,word:"meticulous",   pos:"adj",   def:"Showing great attention to detail or correct behavior.",               ex:"The accountant was meticulous in documenting every transaction.",                syn:["careful","thorough","precise"],  level:"GMAT"},
-{id:324,word:"nominal",      pos:"adj",   def:"Existing in name only; very small.",                                   ex:"The fee was nominal — barely enough to cover administrative costs.",            syn:["token","minor","small"],         level:"GMAT"},
-{id:325,word:"paradigm",     pos:"noun",  def:"A model or pattern used as an example.",                               ex:"The startup disrupted the existing paradigm for retail shopping.",               syn:["model","framework","standard"],  level:"GMAT"},
-{id:326,word:"pragmatic",    pos:"adj",   def:"Dealing with problems in a practical and realistic way.",               ex:"A pragmatic leader focuses on results rather than ideals.",                     syn:["practical","realistic","sensible"],level:"GMAT"},
-{id:327,word:"rhetoric",     pos:"noun",  def:"Language designed to persuade or impress.",                            ex:"The CEO's rhetoric about innovation didn't match the company's slow progress.",  syn:["persuasion","oratory","language"],level:"GMAT"},
-{id:328,word:"sovereign",    pos:"adj",   def:"Possessing supreme or ultimate power.",                                 ex:"The sovereign authority of the central bank was rarely challenged.",            syn:["supreme","independent","autonomous"],level:"GMAT"},
-{id:329,word:"tenuous",      pos:"adj",   def:"Very weak or slight; lacking substance.",                              ex:"The connection between the two events was tenuous at best.",                    syn:["weak","slight","fragile"],       level:"GMAT"},
-{id:330,word:"underscore",   pos:"verb",  def:"To emphasize the importance of something.",                            ex:"The results underscore the need for further investment in research.",           syn:["emphasize","highlight","stress"], level:"GMAT"},
-{id:331,word:"vacillate",    pos:"verb",  def:"To waver between different opinions or actions.",                      ex:"The manager vacillated between two strategies and missed the opportunity.",     syn:["waver","hesitate","fluctuate"],  level:"GMAT"},
-{id:332,word:"analogous",    pos:"adj",   def:"Comparable in certain respects.",                                      ex:"The structure of the brain is analogous to a computer in some ways.",          syn:["similar","comparable","equivalent"],level:"GMAT"},
-{id:333,word:"concise",      pos:"adj",   def:"Giving a lot of information clearly and in few words.",                 ex:"A concise executive summary is essential for busy decision-makers.",            syn:["brief","succinct","terse"],      level:"GMAT"},
-{id:334,word:"disparity",    pos:"noun",  def:"A great difference between things.",                                   ex:"There is a significant disparity in salaries across departments.",               syn:["difference","gap","inequality"], level:"GMAT"},
-{id:335,word:"erroneous",    pos:"adj",   def:"Wrong; incorrect.",                                                    ex:"The report contained several erroneous assumptions about market size.",         syn:["wrong","incorrect","mistaken"],  level:"GMAT"},
-{id:336,word:"facilitate",   pos:"verb",  def:"To make an action or process easier.",                                  ex:"The new software facilitates collaboration between remote teams.",               syn:["ease","enable","assist"],        level:"GMAT"},
-{id:337,word:"immutable",    pos:"adj",   def:"Unchanging over time.",                                                 ex:"Some business principles are immutable regardless of market conditions.",       syn:["unchangeable","fixed","permanent"],level:"GMAT"},
-{id:338,word:"impede",       pos:"verb",  def:"To delay or prevent the progress of something.",                       ex:"Bureaucratic red tape can impede innovation in large companies.",               syn:["obstruct","hinder","block"],     level:"GMAT"},
+// ── EASY ─────────────────────────────────────────────────
+{id:1,  word:"acquire",     pos:"verb", def:"To gain possession of something through effort.",              ex:"The company plans to acquire a smaller firm to expand its market share.",   syn:["obtain","gain","procure"],          ant:["relinquish","surrender","forfeit"],  diff:"Easy"},
+{id:2,  word:"allocate",    pos:"verb", def:"To distribute resources or duties for a specific purpose.",    ex:"The manager will allocate funds to each department next quarter.",          syn:["assign","distribute","apportion"],  ant:["withhold","retain","keep"],          diff:"Easy"},
+{id:3,  word:"revenue",     pos:"noun", def:"Income generated from business activities.",                   ex:"The company's revenue increased by 15% this year.",                         syn:["income","earnings","proceeds"],     ant:["expense","expenditure","cost"],      diff:"Easy"},
+{id:4,  word:"comply",      pos:"verb", def:"To act in accordance with a request or regulation.",           ex:"All employees must comply with the new safety guidelines.",                 syn:["conform","adhere","obey"],          ant:["defy","resist","disobey"],           diff:"Easy"},
+{id:5,  word:"negotiate",   pos:"verb", def:"To discuss formally in order to reach an agreement.",          ex:"The two companies spent months negotiating the merger terms.",              syn:["discuss","bargain","mediate"],      ant:["impose","dictate","demand"],         diff:"Easy"},
+{id:6,  word:"implement",   pos:"verb", def:"To put a plan or system into action.",                         ex:"The new policy will be implemented starting next month.",                   syn:["execute","apply","enact"],          ant:["abandon","scrap","cancel"],          diff:"Easy"},
+{id:7,  word:"surplus",     pos:"noun", def:"An amount left over after requirements have been met.",        ex:"The factory produced a surplus of goods that had to be stored.",            syn:["excess","remainder","overflow"],    ant:["deficit","shortage","scarcity"],     diff:"Easy"},
+{id:8,  word:"deficit",     pos:"noun", def:"The amount by which something falls short, especially money.", ex:"The country has been running a trade deficit for a decade.",                syn:["shortfall","deficiency","gap"],     ant:["surplus","excess","abundance"],      diff:"Easy"},
+{id:9,  word:"incentive",   pos:"noun", def:"Something that motivates someone to do something.",            ex:"The company offered bonuses as an incentive for higher productivity.",       syn:["motivation","stimulus","reward"],   ant:["deterrent","disincentive","penalty"],diff:"Easy"},
+{id:10, word:"tangible",    pos:"adj",  def:"Clear and definite; real and not imaginary.",                  ex:"The new policy showed tangible results within the first quarter.",          syn:["concrete","real","palpable"],       ant:["intangible","abstract","vague"],     diff:"Easy"},
+{id:11, word:"viable",      pos:"adj",  def:"Capable of working successfully; feasible.",                   ex:"The team discussed whether the new product was commercially viable.",       syn:["feasible","workable","practical"],  ant:["unviable","impractical","impossible"],diff:"Easy"},
+{id:12, word:"consensus",   pos:"noun", def:"General agreement among a group.",                             ex:"The team reached a consensus on the new strategy.",                         syn:["agreement","accord","unity"],       ant:["dissent","disagreement","conflict"], diff:"Easy"},
+{id:13, word:"delegate",    pos:"verb", def:"To entrust a task to another person.",                         ex:"A good manager knows how to delegate responsibilities effectively.",        syn:["assign","entrust","transfer"],      ant:["centralize","retain","control"],     diff:"Easy"},
+{id:14, word:"prospective", pos:"adj",  def:"Expected or likely to happen in the future.",                  ex:"The company met with prospective clients at the trade show.",               syn:["potential","future","anticipated"], ant:["past","former","retrospective"],     diff:"Easy"},
+{id:15, word:"streamline",  pos:"verb", def:"To make a process more efficient and effective.",               ex:"The new software helped streamline the ordering process.",                 syn:["simplify","optimize","improve"],    ant:["complicate","convolute","hinder"],   diff:"Easy"},
+{id:16, word:"liability",   pos:"noun", def:"The state of being legally responsible for something.",         ex:"The company's liabilities exceeded its assets.",                           syn:["obligation","debt","responsibility"],ant:["asset","advantage","benefit"],       diff:"Easy"},
+{id:17, word:"depreciation",pos:"noun", def:"A reduction in the value of an asset over time.",              ex:"The accountant calculated the annual depreciation of the equipment.",       syn:["devaluation","decrease","decline"], ant:["appreciation","increase","growth"],  diff:"Easy"},
+{id:18, word:"audit",       pos:"noun", def:"An official inspection of accounts by an independent body.",   ex:"The company passed its annual financial audit without issues.",             syn:["inspection","examination","review"],ant:["neglect","oversight","ignorance"],   diff:"Easy"},
+{id:19, word:"leverage",    pos:"noun", def:"The use of resources to increase potential gain.",              ex:"The firm used leverage to finance its expansion.",                         syn:["influence","power","advantage"],    ant:["weakness","limitation","disadvantage"],diff:"Easy"},
+{id:20, word:"outsource",   pos:"verb", def:"To contract work out to an external organization.",            ex:"Many firms outsource customer service to reduce costs.",                   syn:["contract out","delegate","subcontract"],ant:["insource","internalize","keep in-house"],diff:"Easy"},
+{id:21, word:"reimburse",   pos:"verb", def:"To pay back money spent by someone.",                          ex:"The company will reimburse travel expenses within 30 days.",               syn:["repay","compensate","refund"],      ant:["charge","withhold","deduct"],        diff:"Easy"},
+{id:22, word:"benchmark",   pos:"noun", def:"A standard or point of reference for comparison.",             ex:"The team used industry leaders as a benchmark for performance.",           syn:["standard","criterion","reference"], ant:["anomaly","exception","outlier"],     diff:"Easy"},
+{id:23, word:"agenda",      pos:"noun", def:"A list of items to be discussed at a formal meeting.",         ex:"The chair distributed the agenda before the meeting started.",             syn:["schedule","plan","program"],        ant:["disorder","spontaneity","chaos"],    diff:"Easy"},
+{id:24, word:"turnover",    pos:"noun", def:"The rate at which employees leave a workforce and are replaced.",ex:"High employee turnover can damage a company's culture.",                syn:["attrition","churn","rotation"],     ant:["retention","stability","permanence"],diff:"Easy"},
+{id:25, word:"deduct",      pos:"verb", def:"To subtract an amount from a total.",                          ex:"You can deduct business travel expenses from your taxes.",                 syn:["subtract","remove","withhold"],     ant:["add","include","credit"],            diff:"Easy"},
+
+// ── MEDIUM ────────────────────────────────────────────────
+{id:101,word:"ambiguous",   pos:"adj",  def:"Open to more than one interpretation; not clear.",             ex:"The professor's ambiguous instructions confused the students.",             syn:["unclear","vague","equivocal"],      ant:["clear","unambiguous","definite"],    diff:"Medium"},
+{id:102,word:"empirical",   pos:"adj",  def:"Based on observation or experiment rather than theory.",        ex:"The scientist relied on empirical evidence to support her hypothesis.",     syn:["observed","experimental","factual"],ant:["theoretical","speculative","abstract"],diff:"Medium"},
+{id:103,word:"hypothesis",  pos:"noun", def:"A proposed explanation made on the basis of limited evidence.", ex:"The researchers developed a hypothesis to explain the unusual findings.",   syn:["theory","supposition","premise"],   ant:["fact","certainty","proof"],          diff:"Medium"},
+{id:104,word:"mitigate",    pos:"verb", def:"To make something less severe, serious, or painful.",           ex:"Planting trees can help mitigate the effects of climate change.",          syn:["reduce","lessen","alleviate"],      ant:["aggravate","worsen","intensify"],    diff:"Medium"},
+{id:105,word:"proliferate", pos:"verb", def:"To increase rapidly in numbers.",                               ex:"Social media platforms have proliferated over the past decade.",           syn:["multiply","expand","spread"],       ant:["dwindle","decrease","diminish"],     diff:"Medium"},
+{id:106,word:"catalyst",    pos:"noun", def:"A person or event that causes or accelerates change.",          ex:"The invention of the internet was a catalyst for global communication.",   syn:["trigger","stimulus","spark"],       ant:["inhibitor","barrier","deterrent"],   diff:"Medium"},
+{id:107,word:"coherent",    pos:"adj",  def:"Logical and consistent; clearly expressed.",                    ex:"The student wrote a coherent and well-structured essay.",                 syn:["logical","consistent","clear"],     ant:["incoherent","confused","illogical"], diff:"Medium"},
+{id:108,word:"diminish",    pos:"verb", def:"To make or become less.",                                       ex:"The pain began to diminish after she took the medication.",               syn:["reduce","decrease","lessen"],       ant:["increase","grow","amplify"],         diff:"Medium"},
+{id:109,word:"explicit",    pos:"adj",  def:"Stated clearly and in detail, leaving no room for confusion.",  ex:"The contract contained explicit terms about payment deadlines.",           syn:["clear","direct","precise"],         ant:["implicit","vague","indirect"],       diff:"Medium"},
+{id:110,word:"subsequent",  pos:"adj",  def:"Coming after or following something.",                          ex:"Subsequent research confirmed the original findings.",                     syn:["following","later","succeeding"],   ant:["prior","previous","preceding"],      diff:"Medium"},
+{id:111,word:"arbitrary",   pos:"adj",  def:"Based on random choice or personal whim, not reason.",          ex:"The teacher's grading seemed arbitrary and inconsistent.",                syn:["random","capricious","whimsical"],  ant:["principled","logical","reasoned"],   diff:"Medium"},
+{id:112,word:"hierarchy",   pos:"noun", def:"A system in which members are ranked according to status.",    ex:"The corporate hierarchy determines who reports to whom.",                  syn:["ranking","order","chain"],          ant:["equality","egalitarianism","democracy"],diff:"Medium"},
+{id:113,word:"accumulate",  pos:"verb", def:"To gather or collect over a period of time.",                   ex:"Over years, dust can accumulate in ventilation systems.",                 syn:["collect","amass","gather"],         ant:["disperse","distribute","scatter"],   diff:"Medium"},
+{id:114,word:"contend",     pos:"verb", def:"To assert something as a position in an argument.",             ex:"Critics contend that the policy will harm economic growth.",               syn:["argue","claim","assert"],           ant:["concede","yield","agree"],           diff:"Medium"},
+{id:115,word:"conventional",pos:"adj",  def:"Based on or in accordance with what is generally done.",        ex:"The artist rejected conventional techniques in favor of her own style.",   syn:["traditional","standard","typical"], ant:["unconventional","radical","original"],diff:"Medium"},
+{id:116,word:"deplete",     pos:"verb", def:"To reduce or exhaust the supply of something.",                 ex:"Overfishing has depleted many ocean species.",                             syn:["exhaust","drain","reduce"],         ant:["replenish","restore","refill"],      diff:"Medium"},
+{id:117,word:"diverge",     pos:"verb", def:"To separate and go in different directions.",                   ex:"The two theories began to diverge on the question of origins.",           syn:["separate","split","differ"],        ant:["converge","merge","unite"],          diff:"Medium"},
+{id:118,word:"integrate",   pos:"verb", def:"To combine parts so they work together as a whole.",            ex:"The new software integrates smoothly with existing systems.",              syn:["combine","merge","unify"],          ant:["separate","divide","fragment"],      diff:"Medium"},
+{id:119,word:"manifest",    pos:"verb", def:"To display or show something clearly.",                         ex:"Stress can manifest in physical symptoms like headaches.",                syn:["show","reveal","display"],          ant:["conceal","hide","suppress"],         diff:"Medium"},
+{id:120,word:"negligible",  pos:"adj",  def:"So small or unimportant as to be not worth considering.",       ex:"The margin of error was negligible and did not affect the results.",      syn:["insignificant","trivial","minimal"],ant:["significant","substantial","major"],  diff:"Medium"},
+{id:121,word:"volatile",    pos:"adj",  def:"Liable to change rapidly and unpredictably.",                   ex:"The volatile market made investors hesitant to commit funds.",             syn:["unstable","unpredictable","erratic"],ant:["stable","steady","consistent"],      diff:"Medium"},
+{id:122,word:"scrutinize",  pos:"verb", def:"To examine or inspect closely and thoroughly.",                 ex:"Auditors scrutinized every line of the company's accounts.",              syn:["examine","inspect","analyze"],      ant:["overlook","ignore","neglect"],       diff:"Medium"},
+{id:123,word:"sustain",     pos:"verb", def:"To cause to continue for an extended period.",                  ex:"The company struggled to sustain growth during the economic downturn.",   syn:["maintain","continue","support"],    ant:["abandon","discontinue","stop"],      diff:"Medium"},
+{id:124,word:"facilitate",  pos:"verb", def:"To make an action or process easier.",                          ex:"The new software facilitates collaboration between remote teams.",         syn:["ease","enable","assist"],           ant:["impede","hinder","obstruct"],        diff:"Medium"},
+{id:125,word:"pragmatic",   pos:"adj",  def:"Dealing with problems in a practical and realistic way.",       ex:"A pragmatic leader focuses on results rather than ideals.",               syn:["practical","realistic","sensible"], ant:["idealistic","impractical","naive"],  diff:"Medium"},
+{id:126,word:"concise",     pos:"adj",  def:"Giving a lot of information clearly and in few words.",          ex:"A concise executive summary is essential for busy decision-makers.",      syn:["brief","succinct","terse"],         ant:["verbose","wordy","lengthy"],         diff:"Medium"},
+{id:127,word:"lucrative",   pos:"adj",  def:"Producing a great deal of profit.",                             ex:"Consulting proved to be a lucrative career for the experienced engineer.", syn:["profitable","rewarding","gainful"], ant:["unprofitable","costly","losing"],    diff:"Medium"},
+{id:128,word:"meticulous",  pos:"adj",  def:"Showing great attention to detail or correct behavior.",        ex:"The accountant was meticulous in documenting every transaction.",          syn:["careful","thorough","precise"],     ant:["careless","sloppy","negligent"],     diff:"Medium"},
+{id:129,word:"salient",     pos:"adj",  def:"Most noticeable or important.",                                 ex:"The consultant highlighted the salient points of the financial report.",  syn:["notable","prominent","key"],        ant:["obscure","minor","insignificant"],   diff:"Medium"},
+{id:130,word:"disparity",   pos:"noun", def:"A great difference between things.",                            ex:"There is a significant disparity in salaries across departments.",         syn:["difference","gap","inequality"],    ant:["equality","uniformity","parity"],    diff:"Medium"},
+{id:131,word:"corroborate", pos:"verb", def:"To confirm or support a statement with evidence.",               ex:"The witness testimony corroborated the forensic findings.",               syn:["confirm","verify","support"],       ant:["contradict","refute","deny"],        diff:"Medium"},
+{id:132,word:"impede",      pos:"verb", def:"To delay or prevent the progress of something.",                ex:"Bureaucratic red tape can impede innovation in large companies.",          syn:["obstruct","hinder","block"],        ant:["facilitate","help","enable"],        diff:"Medium"},
+{id:133,word:"immutable",   pos:"adj",  def:"Unchanging over time or unable to be changed.",                 ex:"Some business principles are immutable regardless of market conditions.",  syn:["unchangeable","fixed","permanent"], ant:["mutable","changeable","flexible"],   diff:"Medium"},
+{id:134,word:"analogous",   pos:"adj",  def:"Comparable in certain respects.",                               ex:"The structure of the brain is analogous to a computer in some ways.",     syn:["similar","comparable","equivalent"],ant:["dissimilar","different","unlike"],   diff:"Medium"},
+{id:135,word:"erroneous",   pos:"adj",  def:"Wrong; incorrect.",                                             ex:"The report contained several erroneous assumptions about market size.",   syn:["wrong","incorrect","mistaken"],     ant:["correct","accurate","right"],        diff:"Medium"},
+
+// ── HARD ─────────────────────────────────────────────────
+{id:201,word:"acrimony",    pos:"noun", def:"Bitterness or ill feeling.",                                    ex:"The divorce proceedings were marked by acrimony between both parties.",   syn:["bitterness","hostility","rancor"],  ant:["amity","goodwill","cordiality"],     diff:"Hard"},
+{id:202,word:"loquacious",  pos:"adj",  def:"Tending to talk a great deal; talkative.",                      ex:"The loquacious salesman barely let the customer speak.",                  syn:["talkative","garrulous","verbose"],  ant:["laconic","taciturn","reserved"],     diff:"Hard"},
+{id:203,word:"perfidious",  pos:"adj",  def:"Deceitful and untrustworthy.",                                  ex:"The perfidious spy had been betraying secrets for years.",                syn:["treacherous","disloyal","deceitful"],ant:["loyal","faithful","trustworthy"],   diff:"Hard"},
+{id:204,word:"ubiquitous",  pos:"adj",  def:"Present, appearing, or found everywhere.",                      ex:"Smartphones have become ubiquitous in modern society.",                   syn:["omnipresent","pervasive","universal"],ant:["rare","scarce","uncommon"],         diff:"Hard"},
+{id:205,word:"ephemeral",   pos:"adj",  def:"Lasting for a very short time.",                                ex:"The beauty of cherry blossoms is ephemeral, lasting only days.",          syn:["fleeting","transient","momentary"], ant:["permanent","enduring","lasting"],    diff:"Hard"},
+{id:206,word:"obdurate",    pos:"adj",  def:"Stubbornly refusing to change one's opinion.",                  ex:"Despite the evidence, he remained obdurate in his position.",             syn:["stubborn","inflexible","unyielding"],ant:["flexible","tractable","amenable"],  diff:"Hard"},
+{id:207,word:"laconic",     pos:"adj",  def:"Using very few words; brief and concise.",                      ex:"His laconic reply told us everything: 'No.'",                            syn:["brief","concise","terse"],          ant:["verbose","loquacious","garrulous"],  diff:"Hard"},
+{id:208,word:"sycophant",   pos:"noun", def:"A person who flatters others to gain personal advantage.",      ex:"He surrounded himself with sycophants who never challenged him.",         syn:["flatterer","toady","yes-man"],      ant:["critic","detractor","challenger"],   diff:"Hard"},
+{id:209,word:"magnanimous", pos:"adj",  def:"Very generous or forgiving, especially toward a rival.",        ex:"She was magnanimous in victory, congratulating her opponent warmly.",     syn:["generous","noble","charitable"],    ant:["petty","mean-spirited","vindictive"],diff:"Hard"},
+{id:210,word:"temerity",    pos:"noun", def:"Excessive confidence or boldness; audacity.",                   ex:"He had the temerity to question the CEO's decision publicly.",            syn:["audacity","boldness","nerve"],      ant:["timidity","cowardice","caution"],    diff:"Hard"},
+{id:211,word:"propitious",  pos:"adj",  def:"Giving or indicating a good chance of success; favorable.",     ex:"The weather was propitious for the outdoor ceremony.",                    syn:["favorable","auspicious","promising"],ant:["inauspicious","unfavorable","unlucky"],diff:"Hard"},
+{id:212,word:"erudite",     pos:"adj",  def:"Having or showing great knowledge or learning.",                ex:"The erudite professor could speak on almost any academic subject.",        syn:["learned","scholarly","knowledgeable"],ant:["ignorant","uneducated","unlearned"],diff:"Hard"},
+{id:213,word:"mendacious",  pos:"adj",  def:"Not telling the truth; lying.",                                 ex:"The mendacious witness contradicted herself several times.",              syn:["dishonest","deceitful","lying"],    ant:["truthful","honest","candid"],        diff:"Hard"},
+{id:214,word:"nefarious",   pos:"adj",  def:"Wicked or criminal.",                                           ex:"The villain's nefarious plan was foiled by the detective.",               syn:["wicked","evil","villainous"],       ant:["virtuous","righteous","noble"],      diff:"Hard"},
+{id:215,word:"obsequious",  pos:"adj",  def:"Obedient to an excessive degree; fawning.",                     ex:"The obsequious assistant agreed with everything the boss said.",          syn:["servile","fawning","sycophantic"],  ant:["assertive","independent","bold"],    diff:"Hard"},
+{id:216,word:"querulous",   pos:"adj",  def:"Complaining in a petulant or whining manner.",                  ex:"The querulous patient demanded to see a different doctor.",               syn:["complaining","whiny","peevish"],    ant:["content","satisfied","cheerful"],    diff:"Hard"},
+{id:217,word:"venal",       pos:"adj",  def:"Showing or motivated by susceptibility to bribery.",            ex:"The venal official accepted bribes in exchange for favorable decisions.", syn:["corrupt","bribable","dishonest"],   ant:["honest","incorruptible","ethical"],  diff:"Hard"},
+{id:218,word:"recalcitrant",pos:"adj",  def:"Having an obstinately uncooperative attitude.",                 ex:"The recalcitrant prisoner refused to follow any prison rules.",           syn:["defiant","stubborn","unruly"],      ant:["compliant","obedient","cooperative"],diff:"Hard"},
+{id:219,word:"supercilious",pos:"adj",  def:"Behaving as if one is superior to others.",                     ex:"Her supercilious attitude alienated her colleagues.",                     syn:["arrogant","condescending","haughty"],ant:["humble","modest","respectful"],     diff:"Hard"},
+{id:220,word:"diffident",   pos:"adj",  def:"Modest or shy due to a lack of self-confidence.",               ex:"The diffident student rarely raised her hand in class.",                 syn:["shy","timid","modest"],             ant:["confident","bold","assertive"],      diff:"Hard"},
+{id:221,word:"intransigent",pos:"adj",  def:"Unwilling to change one's views or agree to compromise.",       ex:"The union was intransigent during the negotiations.",                    syn:["stubborn","uncompromising","inflexible"],ant:["flexible","compromising","open"],  diff:"Hard"},
+{id:222,word:"specious",    pos:"adj",  def:"Superficially plausible but actually wrong.",                   ex:"His specious argument sounded convincing but had no factual basis.",     syn:["misleading","fallacious","deceptive"],ant:["genuine","valid","sound"],          diff:"Hard"},
+{id:223,word:"torpor",      pos:"noun", def:"A state of mental or physical inactivity; lethargy.",           ex:"The long winter kept the whole town in a kind of torpor.",               syn:["lethargy","sluggishness","inertia"],ant:["vivacity","energy","vigor"],         diff:"Hard"},
+{id:224,word:"cogent",      pos:"adj",  def:"Clear, logical, and convincing.",                               ex:"She made a cogent argument for policy reform.",                          syn:["convincing","compelling","persuasive"],ant:["weak","unconvincing","flimsy"],    diff:"Hard"},
+{id:225,word:"placate",     pos:"verb", def:"To make someone less angry or upset.",                          ex:"The manager tried to placate the angry customer with a discount.",        syn:["appease","calm","pacify"],          ant:["antagonize","anger","provoke"],      diff:"Hard"},
+{id:226,word:"garrulous",   pos:"adj",  def:"Excessively talkative, especially on trivial matters.",         ex:"The garrulous neighbor talked for an hour without stopping.",             syn:["talkative","loquacious","chatty"],  ant:["taciturn","reserved","reticent"],    diff:"Hard"},
+{id:227,word:"pernicious",  pos:"adj",  def:"Having a harmful effect in a gradual or subtle way.",           ex:"The pernicious effects of misinformation can take years to reverse.",    syn:["harmful","destructive","damaging"], ant:["harmless","beneficial","benign"],    diff:"Hard"},
+{id:228,word:"venerate",    pos:"verb", def:"To regard with great respect and reverence.",                   ex:"The community venerated their founder as a saintly figure.",             syn:["revere","respect","honor"],         ant:["despise","disrespect","scorn"],      diff:"Hard"},
+{id:229,word:"repudiate",   pos:"verb", def:"To refuse to accept or be associated with something.",          ex:"The candidate repudiated the inflammatory remarks made by his supporters.",syn:["reject","deny","disavow"],         ant:["accept","affirm","acknowledge"],     diff:"Hard"},
+{id:230,word:"laud",        pos:"verb", def:"To praise someone or something highly.",                        ex:"Critics lauded the director's latest film as a masterpiece.",            syn:["praise","extol","commend"],         ant:["condemn","criticize","denounce"],    diff:"Hard"},
+{id:231,word:"insipid",     pos:"adj",  def:"Lacking flavor; not interesting or exciting.",                  ex:"The speech was so insipid that half the audience fell asleep.",          syn:["bland","dull","tasteless"],         ant:["interesting","stimulating","vivid"], diff:"Hard"},
+{id:232,word:"furtive",     pos:"adj",  def:"Attempting to avoid notice; secretive.",                        ex:"He cast a furtive glance over his shoulder before entering.",            syn:["secretive","stealthy","surreptitious"],ant:["open","transparent","overt"],     diff:"Hard"},
+{id:233,word:"enervate",    pos:"verb", def:"To weaken or drain of energy.",                                 ex:"The long illness had enervated him completely.",                         syn:["weaken","debilitate","exhaust"],    ant:["invigorate","energize","strengthen"],diff:"Hard"},
+{id:234,word:"pellucid",    pos:"adj",  def:"Translucently clear; easily understood.",                       ex:"The professor's pellucid explanation made the concept easy to grasp.",   syn:["clear","transparent","lucid"],      ant:["opaque","murky","obscure"],          diff:"Hard"},
+{id:235,word:"truculent",   pos:"adj",  def:"Eager or quick to argue or fight; aggressively defiant.",       ex:"The truculent student challenged every point the professor made.",        syn:["aggressive","combative","belligerent"],ant:["peaceful","docile","cooperative"], diff:"Hard"},
+{id:236,word:"amalgamate",  pos:"verb", def:"To combine or unite to form one organization or structure.",    ex:"The two departments amalgamated to improve efficiency.",                  syn:["merge","combine","unify"],          ant:["separate","divide","split"],         diff:"Hard"},
+{id:237,word:"daunt",       pos:"verb", def:"To make someone feel intimidated or apprehensive.",             ex:"The scale of the project did not daunt her experienced team.",            syn:["intimidate","discourage","frighten"],ant:["encourage","embolden","inspire"],   diff:"Hard"},
+{id:238,word:"gainsay",     pos:"verb", def:"To deny or contradict.",                                        ex:"No one could gainsay the evidence presented in court.",                  syn:["deny","contradict","dispute"],      ant:["affirm","confirm","support"],        diff:"Hard"},
+{id:239,word:"equivocate",  pos:"verb", def:"To use ambiguous language to avoid committing to the truth.",   ex:"The politician equivocated when asked about his involvement.",            syn:["hedge","evade","prevaricate"],      ant:["assert","declare","commit"],         diff:"Hard"},
+{id:240,word:"ostentation", pos:"noun", def:"Pretentious display intended to impress others.",               ex:"The billionaire's ostentation was evident in his fleet of yachts.",      syn:["showiness","flamboyance","display"],ant:["modesty","humility","simplicity"],   diff:"Hard"},
 ];
 
-// ════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════
+// ANALOGY PAIRS
+// Format: {a, b, c, d (correct answer), rel (relationship hint),
+//          diff, dist (3 distractors)}
+// Question shown: "[A] : [B] :: [C] : ___?"
+// ════════════════════════════════════════════════════════════
+const ANALOGIES = [
+// ── EASY ────────────────────────────────────────
+{a:"hot",     b:"cold",      c:"day",      d:"night",     rel:"opposites",     diff:"Easy",   dist:["morning","evening","afternoon"]},
+{a:"cat",     b:"kitten",    c:"dog",      d:"puppy",     rel:"adult : young", diff:"Easy",   dist:["hound","canine","wolf"]},
+{a:"fast",    b:"slow",      c:"loud",     d:"quiet",     rel:"opposites",     diff:"Easy",   dist:["soft","gentle","calm"]},
+{a:"author",  b:"book",      c:"composer", d:"symphony",  rel:"creator : work",diff:"Easy",   dist:["concert","orchestra","instrument"]},
+{a:"eye",     b:"see",       c:"ear",      d:"hear",      rel:"organ : function",diff:"Easy", dist:["listen","sound","nose"]},
+{a:"teacher", b:"school",    c:"doctor",   d:"hospital",  rel:"worker : place",diff:"Easy",   dist:["clinic","pharmacy","library"]},
+{a:"big",     b:"huge",      c:"small",    d:"tiny",      rel:"synonyms",      diff:"Easy",   dist:["little","slight","narrow"]},
+{a:"fire",    b:"ash",       c:"rain",     d:"puddle",    rel:"cause : effect",diff:"Easy",   dist:["cloud","storm","flood"]},
+{a:"happy",   b:"sad",       c:"brave",    d:"cowardly",  rel:"opposites",     diff:"Easy",   dist:["fearful","timid","weak"]},
+{a:"car",     b:"road",      c:"ship",     d:"sea",       rel:"vehicle : path",diff:"Easy",   dist:["river","ocean","lake"]},
+{a:"pen",     b:"write",     c:"knife",    d:"cut",       rel:"tool : action", diff:"Easy",   dist:["slice","stab","scratch"]},
+{a:"bird",    b:"nest",      c:"fish",     d:"pond",      rel:"animal : home", diff:"Easy",   dist:["river","lake","water"]},
+{a:"cold",    b:"shiver",    c:"hot",      d:"sweat",     rel:"cause : effect",diff:"Easy",   dist:["burn","melt","swelter"]},
+{a:"sun",     b:"day",       c:"moon",     d:"night",     rel:"celestial : time",diff:"Easy", dist:["morning","evening","star"]},
+{a:"hungry",  b:"eat",       c:"tired",    d:"sleep",     rel:"need : action", diff:"Easy",   dist:["rest","yawn","relax"]},
+// ── MEDIUM ──────────────────────────────────────
+{a:"surplus",    b:"deficit",    c:"mitigate",  d:"aggravate",  rel:"opposites",     diff:"Medium", dist:["worsen","intensify","inflame"]},
+{a:"tangible",   b:"intangible", c:"explicit",  d:"implicit",   rel:"opposites",     diff:"Medium", dist:["vague","unclear","ambiguous"]},
+{a:"integrate",  b:"separate",   c:"converge",  d:"diverge",    rel:"opposites",     diff:"Medium", dist:["split","scatter","break"]},
+{a:"coherent",   b:"logical",    c:"ambiguous", d:"unclear",    rel:"synonyms",      diff:"Medium", dist:["vague","murky","puzzling"]},
+{a:"diminish",   b:"increase",   c:"deplete",   d:"replenish",  rel:"opposites",     diff:"Medium", dist:["restore","refill","revive"]},
+{a:"catalyst",   b:"accelerate", c:"impediment",d:"slow",       rel:"function",      diff:"Medium", dist:["obstruct","hinder","stop"]},
+{a:"volatile",   b:"stable",     c:"ephemeral", d:"enduring",   rel:"opposites",     diff:"Medium", dist:["lasting","permanent","eternal"]},
+{a:"meticulous", b:"careless",   c:"concise",   d:"verbose",    rel:"opposites",     diff:"Medium", dist:["wordy","lengthy","rambling"]},
+{a:"lucrative",  b:"profitable", c:"erroneous", d:"mistaken",   rel:"synonyms",      diff:"Medium", dist:["incorrect","wrong","faulty"]},
+{a:"scrutinize", b:"ignore",     c:"corroborate",d:"refute",    rel:"opposites",     diff:"Medium", dist:["deny","contradict","disprove"]},
+{a:"pragmatic",  b:"idealistic", c:"conventional",d:"radical",  rel:"opposites",     diff:"Medium", dist:["extreme","avant-garde","novel"]},
+{a:"facilitate", b:"impede",     c:"sustain",   d:"abandon",    rel:"opposites",     diff:"Medium", dist:["stop","drop","quit"]},
+{a:"accumulate", b:"disperse",   c:"integrate", d:"separate",   rel:"opposites",     diff:"Medium", dist:["split","divide","fragment"]},
+{a:"salient",    b:"obscure",    c:"tangible",  d:"intangible", rel:"opposites",     diff:"Medium", dist:["abstract","vague","theoretical"]},
+{a:"disparity",  b:"equality",   c:"acrimony",  d:"amity",      rel:"opposites",     diff:"Medium", dist:["goodwill","peace","harmony"]},
+// ── HARD ────────────────────────────────────────
+{a:"loquacious", b:"talkative",  c:"laconic",   d:"terse",      rel:"antonym→synonym",diff:"Hard",  dist:["brief","curt","abrupt"]},
+{a:"magnanimous",b:"generous",   c:"venal",     d:"corrupt",    rel:"antonym→synonym",diff:"Hard",  dist:["greedy","selfish","dishonest"]},
+{a:"ubiquitous", b:"rare",       c:"ephemeral", d:"permanent",  rel:"opposites",     diff:"Hard",   dist:["lasting","enduring","eternal"]},
+{a:"erudite",    b:"ignorant",   c:"pellucid",  d:"opaque",     rel:"opposites",     diff:"Hard",   dist:["murky","cloudy","obscure"]},
+{a:"acrimony",   b:"amity",      c:"torpor",    d:"vivacity",   rel:"opposites",     diff:"Hard",   dist:["energy","vigor","zeal"]},
+{a:"propitious", b:"favorable",  c:"inauspicious",d:"unfavorable",rel:"antonym→synonym",diff:"Hard",dist:["unlucky","adverse","hostile"]},
+{a:"mendacious", b:"truthful",   c:"nefarious", d:"virtuous",   rel:"opposites",     diff:"Hard",   dist:["righteous","moral","noble"]},
+{a:"diffident",  b:"confident",  c:"supercilious",d:"humble",   rel:"opposites",     diff:"Hard",   dist:["modest","meek","unassuming"]},
+{a:"cogent",     b:"convincing", c:"specious",  d:"misleading", rel:"antonym→synonym",diff:"Hard",  dist:["deceptive","fallacious","spurious"]},
+{a:"placate",    b:"antagonize", c:"laud",      d:"condemn",    rel:"opposites",     diff:"Hard",   dist:["criticize","denounce","censure"]},
+{a:"obdurate",   b:"intransigent",c:"diffident",d:"timid",      rel:"synonyms",      diff:"Hard",   dist:["shy","reserved","meek"]},
+{a:"temerity",   b:"timidity",   c:"acrimony",  d:"goodwill",   rel:"opposites",     diff:"Hard",   dist:["amity","cordiality","warmth"]},
+{a:"venerate",   b:"despise",    c:"enervate",  d:"invigorate", rel:"opposites",     diff:"Hard",   dist:["energize","strengthen","fortify"]},
+{a:"garrulous",  b:"taciturn",   c:"obsequious",d:"assertive",  rel:"opposites",     diff:"Hard",   dist:["independent","bold","forthright"]},
+{a:"amalgamate", b:"separate",   c:"repudiate", d:"affirm",     rel:"opposites",     diff:"Hard",   dist:["accept","acknowledge","confirm"]},
+];
+
+// ════════════════════════════════════════════════════════════
 // STATE & STORAGE
-// ════════════════════════════════════════════════════════════════
-const K = {
-  sessions: 'wq_sessions',
-  seen:     'wq_seen',
-  known:    'wq_known',
-  streak:   'wq_streak',
-  settings: 'wq_settings',
-  pin:      'wq_pin_hash',
-  bestStreak:'wq_best_streak'
-};
+// ════════════════════════════════════════════════════════════
+const K={sessions:'wq_sessions',seen:'wq_seen',known:'wq_known',streak:'wq_streak',settings:'wq_settings',pin:'wq_pin_hash',best:'wq_best_streak'};
+function load(k,d){try{const v=localStorage.getItem(k);return v!==null?JSON.parse(v):d}catch{return d}}
+function save(k,v){localStorage.setItem(k,JSON.stringify(v))}
+function getSessions(){return load(K.sessions,[])}
+function getSeenSet(){return new Set(load(K.seen,[]))}
+function getKnownSet(){return new Set(load(K.known,[]))}
+function getStreak(){return load(K.streak,{count:0,lastDate:''})}
+function getSettings(){return Object.assign({diff:'ALL',quizType:'definition',sessionSize:10},load(K.settings,{}))}
 
-function load(key, def) {
-  try { const v = localStorage.getItem(key); return v !== null ? JSON.parse(v) : def; }
-  catch { return def; }
-}
-function save(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
+// ════════════════════════════════════════════════════════════
+// PIN
+// ════════════════════════════════════════════════════════════
+let pinBuffer='';
+async function sha256(m){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(m));return Array.from(new Uint8Array(b)).map(b=>b.toString(16).padStart(2,'0')).join('')}
+function pinKey(d){if(pinBuffer.length>=4)return;pinBuffer+=d;updateLockDots();if(pinBuffer.length===4)setTimeout(checkPin,80)}
+function pinDel(){pinBuffer=pinBuffer.slice(0,-1);updateLockDots()}
+function updateLockDots(err){for(let i=0;i<4;i++){const e=document.getElementById('ld'+i);e.classList.toggle('filled',i<pinBuffer.length);e.classList.toggle('error',!!err)}}
+async function checkPin(){const h=await sha256(pinBuffer);if(h===localStorage.getItem(K.pin)){pinBuffer='';unlockApp()}else{updateLockDots(true);setTimeout(()=>{pinBuffer='';updateLockDots(false)},700)}}
+function unlockApp(){document.getElementById('tab-bar').classList.remove('hidden');showScreen('screen-home')}
 
-function getSessions()  { return load(K.sessions, []); }
-function getSeenSet()   { return new Set(load(K.seen, [])); }
-function getKnownSet()  { return new Set(load(K.known, [])); }
-function getStreak()    { return load(K.streak, {count:0, lastDate:''}); }
-function getSettings()  { return Object.assign({level:'ALL', sessionSize:10}, load(K.settings, {})); }
-
-// ════════════════════════════════════════════════════════════════
-// PIN LOCK
-// ════════════════════════════════════════════════════════════════
-let pinBuffer = '';
-
-async function sha256(msg) {
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(msg));
-  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
-}
-
-function pinKey(d) {
-  if (pinBuffer.length >= 4) return;
-  pinBuffer += d;
-  updateLockDots();
-  if (pinBuffer.length === 4) setTimeout(checkPin, 80);
-}
-
-function pinDel() {
-  pinBuffer = pinBuffer.slice(0,-1);
-  updateLockDots();
-}
-
-function updateLockDots(err) {
-  for (let i=0;i<4;i++) {
-    const el = document.getElementById('ld'+i);
-    el.classList.toggle('filled', i < pinBuffer.length);
-    el.classList.toggle('error', !!err);
-  }
-}
-
-async function checkPin() {
-  const stored = localStorage.getItem(K.pin);
-  const hash = await sha256(pinBuffer);
-  if (hash === stored) {
-    pinBuffer = '';
-    unlockApp();
-  } else {
-    updateLockDots(true);
-    setTimeout(()=>{ pinBuffer=''; updateLockDots(false); }, 700);
-  }
-}
-
-function unlockApp() {
-  document.getElementById('tab-bar').classList.remove('hidden');
-  showScreen('screen-home');
-}
-
-// ════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════
 // NAVIGATION
-// ════════════════════════════════════════════════════════════════
-const TAB_MAP = {
-  'screen-home':    'tab-home',
-  'screen-words':   'tab-words',
-  'screen-stats':   'tab-stats',
-  'screen-settings':'tab-settings'
-};
-
-function showScreen(id) {
+// ════════════════════════════════════════════════════════════
+const TAB_MAP={'screen-home':'tab-home','screen-words':'tab-words','screen-stats':'tab-stats','screen-settings':'tab-settings'};
+function showScreen(id){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById('score-screen').classList.remove('active');
-  const el = document.getElementById(id);
-  if (el) el.classList.add('active');
+  const el=document.getElementById(id);if(el)el.classList.add('active');
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  if (TAB_MAP[id]) document.getElementById(TAB_MAP[id]).classList.add('active');
-  // Lifecycle hooks
-  if (id==='screen-home')     refreshHome();
-  if (id==='screen-words')    refreshWords();
-  if (id==='screen-stats')    refreshStats();
-  if (id==='screen-settings') loadSettings();
+  if(TAB_MAP[id])document.getElementById(TAB_MAP[id]).classList.add('active');
+  if(id==='screen-home')refreshHome();
+  if(id==='screen-words')refreshWords();
+  if(id==='screen-stats')refreshStats();
+  if(id==='screen-settings')loadSettings();
 }
 
-// ════════════════════════════════════════════════════════════════
-// HOME SCREEN
-// ════════════════════════════════════════════════════════════════
-function refreshHome() {
-  const sessions = getSessions();
-  const seen = getSeenSet();
-  const streak = getStreak();
-  const settings = getSettings();
+// ════════════════════════════════════════════════════════════
+// HOME
+// ════════════════════════════════════════════════════════════
+const DIFF_LABELS={ALL:'📚 All',Easy:'🟢 Easy',Medium:'🔵 Medium',Hard:'🟣 Hard'};
+const TYPE_LABELS={definition:'🔤 Definition',synonym:'🔄 Synonym',antonym:'↔ Antonym',analogy:'🔗 Analogy'};
+const DIFF_CLASSES={Easy:'diff-Easy',Medium:'diff-Medium',Hard:'diff-Hard'};
 
-  // Streak
-  document.getElementById('home-streak').textContent = '🔥 ' + streak.count + ' day' + (streak.count!==1?'s':'');
-
-  // Stats
-  document.getElementById('home-seen').textContent = seen.size;
-  document.getElementById('home-sessions').textContent = sessions.length;
-
-  let totalQ=0, totalC=0;
-  sessions.forEach(s=>{ totalQ+=s.total; totalC+=s.score; });
-  document.getElementById('home-accuracy').textContent = totalQ>0 ? Math.round(totalC/totalQ*100)+'%' : '—';
-
-  // Level badge
-  const lvl = settings.level;
-  const lvlLabels = {ALL:'📚 All Levels',TOEIC:'🏢 TOEIC',TOEFL:'🎓 TOEFL',GRE:'📖 GRE',GMAT:'💼 GMAT'};
-  document.getElementById('home-level-badge').textContent = lvlLabels[lvl]||lvl;
-
-  // Word of the Day — deterministic by date
-  const pool = lvl==='ALL' ? WORDS : WORDS.filter(w=>w.level===lvl);
-  const idx = Math.floor(Date.now()/86400000) % pool.length;
-  const wotd = pool[idx];
-  document.getElementById('wotd-word').textContent = wotd.word;
-  document.getElementById('wotd-def').textContent = wotd.def;
-  document.getElementById('wotd-ex').textContent = '"' + wotd.ex + '"';
-  document.getElementById('wotd-badge').textContent = wotd.level;
+function refreshHome(){
+  const sessions=getSessions(),seen=getSeenSet(),streak=getStreak(),s=getSettings();
+  document.getElementById('home-streak').textContent='🔥 '+streak.count+' day'+(streak.count!==1?'s':'');
+  document.getElementById('home-seen').textContent=seen.size;
+  document.getElementById('home-sessions').textContent=sessions.length;
+  let tq=0,tc=0;sessions.forEach(s=>{tq+=s.total;tc+=s.score});
+  document.getElementById('home-accuracy').textContent=tq>0?Math.round(tc/tq*100)+'%':'—';
+  const db=document.getElementById('home-diff-badge');
+  db.textContent=DIFF_LABELS[s.diff]||s.diff;
+  db.className='diff-badge '+(DIFF_CLASSES[s.diff]||'');
+  document.getElementById('home-type-badge').textContent=TYPE_LABELS[s.quizType]||s.quizType;
+  // Word of the day
+  const pool=s.diff==='ALL'?WORDS:WORDS.filter(w=>w.diff===s.diff);
+  const wotd=pool[Math.floor(Date.now()/86400000)%pool.length];
+  document.getElementById('wotd-word').textContent=wotd.word;
+  document.getElementById('wotd-def').textContent=wotd.def;
+  document.getElementById('wotd-ex').textContent='"'+wotd.ex+'"';
+  const wb=document.getElementById('wotd-badge');
+  wb.textContent=wotd.diff;wb.className='diff-badge diff-'+wotd.diff;
 }
 
-// ════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════
 // QUIZ ENGINE
-// ════════════════════════════════════════════════════════════════
-let quizWords = [], quizIdx = 0, quizScore = 0, quizAnswered = false;
-const LETTERS = ['A','B','C','D'];
+// ════════════════════════════════════════════════════════════
+let quizWords=[],quizIdx=0,quizScore=0,quizAnswered=false,quizAnalogies=[],quizType='definition';
+const LETTERS=['A','B','C','D'];
+function shuffle(a){return[...a].sort(()=>Math.random()-.5)}
 
-function shuffle(arr) { return [...arr].sort(()=>Math.random()-0.5); }
+function startQuiz(){
+  const s=getSettings();
+  quizType=s.quizType;
 
-function startQuiz() {
-  const settings = getSettings();
-  let pool = settings.level==='ALL' ? WORDS : WORDS.filter(w=>w.level===settings.level);
-  if (pool.length < 4) { showToast('Not enough words for this level','error'); return; }
-  quizWords = shuffle(pool).slice(0, Math.min(settings.sessionSize, pool.length));
-  quizIdx = 0; quizScore = 0;
+  if(quizType==='analogy'){
+    let pool=s.diff==='ALL'?ANALOGIES:ANALOGIES.filter(a=>a.diff===s.diff);
+    if(pool.length<1){showToast('No analogies for this difficulty','error');return}
+    quizAnalogies=shuffle(pool).slice(0,Math.min(s.sessionSize,pool.length));
+    quizWords=[];
+  } else {
+    let pool=s.diff==='ALL'?WORDS:WORDS.filter(w=>w.diff===s.diff);
+    if(quizType==='antonym') pool=pool.filter(w=>w.ant&&w.ant.length>0);
+    if(pool.length<4){showToast('Not enough words for this selection','error');return}
+    quizWords=shuffle(pool).slice(0,Math.min(s.sessionSize,pool.length));
+    quizAnalogies=[];
+  }
+
+  quizIdx=0;quizScore=0;
   showScreen('screen-quiz');
   renderQuestion();
 }
 
-function renderQuestion() {
-  const w = quizWords[quizIdx];
-  const total = quizWords.length;
-  quizAnswered = false;
+function renderQuestion(){
+  quizAnswered=false;
+  const total=quizType==='analogy'?quizAnalogies.length:quizWords.length;
+  document.getElementById('quiz-qnum').textContent=(quizIdx+1)+' / '+total;
+  document.getElementById('quiz-progress-fill').style.width=((quizIdx+1)/total*100)+'%';
 
-  // Progress
-  document.getElementById('quiz-qnum').textContent = (quizIdx+1) + ' / ' + total;
-  document.getElementById('quiz-progress-fill').style.width = ((quizIdx+1)/total*100) + '%';
+  const typeTag={definition:'🔤 Definition',synonym:'🔄 Synonym',antonym:'↔ Antonym',analogy:'🔗 Analogy'};
+  document.getElementById('quiz-type-tag').textContent=typeTag[quizType]||quizType;
+  document.getElementById('next-btn-inner').textContent=quizIdx+1<total?'Next →':'See Results 🎉';
 
-  // Word card
-  document.getElementById('quiz-pos').textContent = w.pos;
-  document.getElementById('quiz-word').textContent = w.word;
-  document.getElementById('quiz-example').textContent = '"' + w.ex + '"';
-
-  // Choices: correct + 3 distractors
-  const levelPool = WORDS.filter(x=>x.id!==w.id);
-  const distractors = shuffle(levelPool).slice(0,3).map(x=>x.def);
-  const options = shuffle([{text:w.def, correct:true}, ...distractors.map(d=>({text:d,correct:false}))]);
-
-  const container = document.getElementById('choices-container');
-  container.innerHTML = '';
-  options.forEach((opt,i)=>{
-    const btn = document.createElement('button');
-    btn.className = 'choice-btn';
-    btn.innerHTML = `<span class="choice-letter">${LETTERS[i]}</span><span>${opt.text}</span>`;
-    btn.onclick = ()=>{ if(!quizAnswered) selectAnswer(btn, opt.correct, w); };
-    container.appendChild(btn);
-  });
-
-  // Hide feedback + next
-  const fb = document.getElementById('quiz-feedback');
-  fb.className = 'quiz-feedback';
-  fb.style.display = '';
+  const fb=document.getElementById('quiz-feedback');
+  fb.className='quiz-feedback';
   document.getElementById('quiz-next-btn').classList.remove('show');
-  document.getElementById('next-btn-inner').textContent = quizIdx+1<quizWords.length ? 'Next Word →' : 'See Results 🎉';
+
+  if(quizType==='analogy') renderAnalogy();
+  else renderWordQuestion();
 }
 
-function selectAnswer(btn, correct, word) {
-  quizAnswered = true;
-  const btns = document.querySelectorAll('.choice-btn');
-  btns.forEach(b=>b.classList.add('disabled'));
+function renderWordQuestion(){
+  const w=quizWords[quizIdx];
+  document.getElementById('quiz-pos').style.display='';
+  document.getElementById('quiz-pos').textContent=w.pos;
+  document.getElementById('quiz-word-area').innerHTML='<div class="quiz-word">'+w.word+'</div>';
 
-  // Mark selected
-  if (correct) {
-    btn.classList.add('correct');
-    quizScore++;
+  // Example only for definition quiz
+  const exEl=document.getElementById('quiz-example');
+  if(quizType==='definition'){
+    exEl.textContent='"'+w.ex+'"';exEl.style.display='';
   } else {
-    btn.classList.add('wrong');
-    // Highlight correct answer
-    btns.forEach(b=>{ if(b.querySelector('span:last-child').textContent===word.def) b.classList.add('reveal-correct'); });
+    exEl.style.display='none';
   }
 
-  // Feedback
-  const fb = document.getElementById('quiz-feedback');
-  document.getElementById('fb-title').textContent = correct ? '✅ Correct!' : '❌ Incorrect';
-  document.getElementById('fb-body').textContent = correct
-    ? 'Well done! ' + word.word + ' means: ' + word.def
-    : 'The correct answer is: ' + word.def + (word.syn.length ? ' (synonyms: ' + word.syn.join(', ') + ')' : '');
-  fb.className = 'quiz-feedback show ' + (correct ? 'correct-fb' : 'wrong-fb');
+  let qLabel,correct,pool;
+  if(quizType==='synonym'){
+    qLabel='Choose the SYNONYM:';
+    correct=shuffle(w.syn)[0];
+    // Distractors: random words from other entries' syn lists
+    const others=WORDS.filter(x=>x.id!==w.id&&x.syn.length>0);
+    pool=shuffle(others).slice(0,6).map(x=>shuffle(x.syn)[0]).filter(s=>s!==correct);
+  } else if(quizType==='antonym'){
+    qLabel='Choose the ANTONYM:';
+    correct=shuffle(w.ant)[0];
+    const others=WORDS.filter(x=>x.id!==w.id&&x.ant&&x.ant.length>0);
+    pool=shuffle(others).slice(0,6).map(x=>shuffle(x.ant)[0]).filter(s=>s!==correct);
+  } else {
+    qLabel='What does this word mean?';
+    correct=w.def;
+    pool=shuffle(WORDS.filter(x=>x.id!==w.id)).slice(0,3).map(x=>x.def);
+  }
 
+  document.getElementById('quiz-question-label').textContent=qLabel;
+  const distractors=shuffle(pool).slice(0,3);
+  const options=shuffle([{text:correct,correct:true},...distractors.map(d=>({text:d,correct:false}))]);
+  renderChoices(options,w);
+}
+
+function renderAnalogy(){
+  const a=quizAnalogies[quizIdx];
+  document.getElementById('quiz-pos').style.display='none';
+  document.getElementById('quiz-example').style.display='none';
+  document.getElementById('quiz-question-label').textContent='Complete the analogy:';
+  document.getElementById('quiz-word-area').innerHTML=
+    '<div class="quiz-analogy-word">'+
+    a.a.toUpperCase()+' : '+a.b.toUpperCase()+'<br>'+
+    a.c.toUpperCase()+' : ___?</div>'+
+    '<div style="font-size:12px;color:var(--muted);margin-top:6px;font-style:italic">Relationship: '+a.rel+'</div>';
+
+  const options=shuffle([
+    {text:a.d,correct:true},
+    ...a.dist.map(d=>({text:d,correct:false}))
+  ]);
+  renderChoices(options,null,a.d);
+}
+
+function renderChoices(options,word,correctText){
+  const container=document.getElementById('choices-container');
+  container.innerHTML='';
+  options.forEach((opt,i)=>{
+    const btn=document.createElement('button');
+    btn.className='choice-btn';
+    btn.innerHTML=`<span class="choice-letter">${LETTERS[i]}</span><span>${opt.text}</span>`;
+    btn.onclick=()=>{if(!quizAnswered)selectAnswer(btn,opt.correct,word,correctText||opt.text)};
+    container.appendChild(btn);
+  });
+}
+
+function selectAnswer(btn,correct,word,correctText){
+  quizAnswered=true;
+  document.querySelectorAll('.choice-btn').forEach(b=>b.classList.add('disabled'));
+  if(correct){btn.classList.add('correct');quizScore++}
+  else{
+    btn.classList.add('wrong');
+    document.querySelectorAll('.choice-btn').forEach(b=>{
+      if(b.querySelector('span:last-child').textContent===correctText)b.classList.add('reveal-correct');
+    });
+  }
+  const fb=document.getElementById('quiz-feedback');
+  document.getElementById('fb-title').textContent=correct?'✅ Correct!':'❌ Incorrect';
+  if(word){
+    const synStr=word.syn.length?' | Synonyms: '+word.syn.join(', '):'';
+    const antStr=word.ant&&word.ant.length?' | Antonyms: '+word.ant.join(', '):'';
+    document.getElementById('fb-body').textContent=correct
+      ?'Well done! '+word.word+' means: '+word.def
+      :'Correct answer: '+correctText+synStr+(quizType==='antonym'?antStr:'');
+  } else {
+    document.getElementById('fb-body').textContent=correct?'Great analogy reasoning!':'Correct answer: '+correctText;
+  }
+  fb.className='quiz-feedback show '+(correct?'correct-fb':'wrong-fb');
   // Mark word as seen
-  const seen = getSeenSet();
-  seen.add(word.id);
-  save(K.seen, [...seen]);
-
+  if(word){const seen=getSeenSet();seen.add(word.id);save(K.seen,[...seen])}
   document.getElementById('quiz-next-btn').classList.add('show');
 }
 
-function nextQuestion() {
+function nextQuestion(){
   quizIdx++;
-  if (quizIdx >= quizWords.length) {
-    finishQuiz();
-  } else {
-    renderQuestion();
-  }
+  const total=quizType==='analogy'?quizAnalogies.length:quizWords.length;
+  if(quizIdx>=total) finishQuiz();
+  else renderQuestion();
 }
 
-function finishQuiz() {
-  const total = quizWords.length;
-  const pct = Math.round(quizScore/total*100);
-
-  // Save session
-  const sessions = getSessions();
-  const settings = getSettings();
-  sessions.unshift({ date: new Date().toLocaleDateString(), score: quizScore, total, level: settings.level, wordIds: quizWords.map(w=>w.id) });
-  save(K.sessions, sessions.slice(0,50));
-
-  // Update streak
+function finishQuiz(){
+  const total=quizType==='analogy'?quizAnalogies.length:quizWords.length;
+  const pct=Math.round(quizScore/total*100);
+  const s=getSettings();
+  const sessions=getSessions();
+  sessions.unshift({date:new Date().toLocaleDateString(),score:quizScore,total,diff:s.diff,type:quizType});
+  save(K.sessions,sessions.slice(0,50));
   updateStreak();
-
-  // Show score
-  showScoreScreen(quizScore, total, pct);
+  showScoreScreen(quizScore,total,pct);
 }
 
-function updateStreak() {
-  const today = new Date().toDateString();
-  const s = getStreak();
-  if (s.lastDate === today) return; // already done today
-  const yesterday = new Date(Date.now()-86400000).toDateString();
-  s.count = s.lastDate === yesterday ? s.count + 1 : 1;
-  s.lastDate = today;
-  save(K.streak, s);
-  const best = load(K.bestStreak, 0);
-  if (s.count > best) save(K.bestStreak, s.count);
+function updateStreak(){
+  const today=new Date().toDateString();
+  const s=getStreak();
+  if(s.lastDate===today)return;
+  const yesterday=new Date(Date.now()-86400000).toDateString();
+  s.count=s.lastDate===yesterday?s.count+1:1;
+  s.lastDate=today;save(K.streak,s);
+  const best=load(K.best,0);
+  if(s.count>best)save(K.best,s.count);
 }
 
-function showScoreScreen(score, total, pct) {
+function showScoreScreen(score,total,pct){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
-  const ss = document.getElementById('score-screen');
-  ss.classList.add('active');
-
-  const emojis = pct>=90?'🏆':pct>=70?'🎉':pct>=50?'😊':'💪';
-  const titles = pct>=90?'Outstanding!':pct>=70?'Great Job!':pct>=50?'Good Effort!':'Keep Practicing!';
-  const subs = pct>=90?'You aced it! Exceptional vocabulary!':pct>=70?'Solid performance — keep it up!':pct>=50?'You\'re making progress!':'Every quiz helps you improve!';
-
-  document.getElementById('score-emoji').textContent = emojis;
-  document.getElementById('score-title').textContent = titles;
-  document.getElementById('score-big').textContent = score;
-  document.getElementById('score-denom').textContent = 'out of ' + total;
-  document.getElementById('score-subtitle').textContent = subs + ' (' + pct + '%)';
-
-  if (pct >= 70) launchConfetti();
+  const ss=document.getElementById('score-screen');ss.classList.add('active');
+  const e=pct>=90?'🏆':pct>=70?'🎉':pct>=50?'😊':'💪';
+  const t=pct>=90?'Outstanding!':pct>=70?'Great Job!':pct>=50?'Good Effort!':'Keep Practicing!';
+  document.getElementById('score-emoji').textContent=e;
+  document.getElementById('score-title').textContent=t;
+  document.getElementById('score-big').textContent=score;
+  document.getElementById('score-denom').textContent='out of '+total;
+  document.getElementById('score-subtitle').textContent=t+' ('+pct+'%)';
+  if(pct>=70)launchConfetti();
 }
 
-function launchConfetti() {
-  const c = document.getElementById('confetti-container');
-  c.innerHTML = '';
-  const colors = ['#52b788','#2d6a4f','#e8a91f','#e76f51','#d8f3dc','#1b4332'];
-  for (let i=0;i<35;i++) {
-    const p = document.createElement('div');
-    p.className = 'confetti-piece';
-    p.style.cssText = `left:${Math.random()*100}%;top:0;background:${colors[i%colors.length]};animation-delay:${Math.random()*1.2}s;animation-duration:${1.8+Math.random()*1.2}s;transform:rotate(${Math.random()*360}deg)`;
-    c.appendChild(p);
-  }
-}
+function launchConfetti(){
+  const c=document.getElementById('confetti-container');c.innerHTML='';
+  const colors=['#52b788','#2d6a4f','#e8a91f','#e76f51','#d8f3dc','#1b4332'];
+  for(let i=0;i<35;i++){const p=document.createElement('div');p.className='confetti-piece';p.style.cssText=`left:${Math.random()*100}%;top:0;background:${colors[i%colors.length]};animation-delay:${Math.random()*1.2}s;animation-duration:${1.8+Math.random()*1.2}s;transform:rotate(${Math.random()*360}deg)`;c.appendChild(p)}}
 
-// ════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════
 // WORDS SCREEN
-// ════════════════════════════════════════════════════════════════
-let currentWordFilter = 'all';
-let currentModalWordId = null;
-
-function refreshWords() {
-  renderWordList();
-}
-
-function setWordFilter(filter, el) {
-  currentWordFilter = filter;
+// ════════════════════════════════════════════════════════════
+let currentWordFilter='all',currentModalWordId=null;
+function refreshWords(){renderWordList()}
+function setWordFilter(f,el){
+  currentWordFilter=f;
   document.querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active'));
-  el.classList.add('active');
-  renderWordList();
+  el.classList.add('active');renderWordList();
 }
 
-function renderWordList() {
-  const seen = getSeenSet();
-  const known = getKnownSet();
-  const q = document.getElementById('words-search-input').value.toLowerCase().trim();
-  const filter = currentWordFilter;
-
-  let words = WORDS;
-  if (filter==='known') words = words.filter(w=>known.has(w.id));
-  else if (filter!=='all') words = words.filter(w=>w.level===filter);
-  if (q) words = words.filter(w=>w.word.includes(q)||w.def.toLowerCase().includes(q));
-
-  // Sort alphabetically
-  words = [...words].sort((a,b)=>a.word.localeCompare(b.word));
-
-  const seen_words = words.filter(w=>seen.has(w.id));
-  const unseen_words = words.filter(w=>!seen.has(w.id));
-  const display = [...seen_words, ...unseen_words];
-
-  const list = document.getElementById('word-list');
-  const total = seen.size;
-  document.getElementById('words-count-sub').textContent = total + ' words in your collection';
-
-  if (display.length===0) {
-    list.innerHTML = `<div class="empty-state"><div class="es-icon">📚</div><div>No words found.<br>Complete a quiz to add words!</div></div>`;
-    return;
-  }
-
-  const levelColors = {TOEIC:'#2d6a4f',TOEFL:'#1a6b9a',GRE:'#7b3fa0',GMAT:'#a05b1a'};
-  const levelBg    = {TOEIC:'#d8f3dc',TOEFL:'#dbeafe',GRE:'#f3e8ff',GMAT:'#fef3c7'};
-
-  list.innerHTML = display.map(w=>{
-    const isSeen = seen.has(w.id);
-    const isKnown = known.has(w.id);
-    const lc = levelColors[w.level]||'#2d6a4f';
-    const lb = levelBg[w.level]||'#d8f3dc';
-    return `<div class="word-item" onclick="openWordModal(${w.id})">
-      <div class="wi-left">
-        <div class="wi-word" style="${!isSeen?'color:var(--muted);':''}">${w.word}</div>
-        <div class="wi-def">${w.def.slice(0,55)}${w.def.length>55?'…':''}</div>
-      </div>
+function renderWordList(){
+  const seen=getSeenSet(),known=getKnownSet();
+  const q=document.getElementById('words-search-input').value.toLowerCase().trim();
+  let words=WORDS;
+  if(currentWordFilter==='known')words=words.filter(w=>known.has(w.id));
+  else if(currentWordFilter!=='all')words=words.filter(w=>w.diff===currentWordFilter);
+  if(q)words=words.filter(w=>w.word.includes(q)||w.def.toLowerCase().includes(q));
+  words=[...words].sort((a,b)=>a.word.localeCompare(b.word));
+  document.getElementById('words-count-sub').textContent=seen.size+' words in your collection';
+  const list=document.getElementById('word-list');
+  if(!words.length){list.innerHTML='<div class="empty-state"><div class="es-icon">📚</div><div>No words found.<br>Complete a quiz to add words!</div></div>';return}
+  list.innerHTML=words.map(w=>{
+    const isSeen=seen.has(w.id),isKnown=known.has(w.id);
+    return`<div class="word-item" onclick="openWordModal(${w.id})">
+      <div><div class="wi-word" style="${!isSeen?'color:var(--muted);':''}">${w.word}</div>
+      <div class="wi-def">${w.def.slice(0,55)}${w.def.length>55?'…':''}</div></div>
       <div class="wi-right">
-        <span class="wi-level" style="background:${lb};color:${lc}">${w.level}</span>
-        ${isKnown?'<span class="wi-known">✅</span>':isSeen?'<span class="wi-known" style="opacity:.3">👁</span>':''}
-      </div>
-    </div>`;
+        <span class="diff-badge diff-${w.diff}" style="font-size:10px">${w.diff}</span>
+        ${isKnown?'<span>✅</span>':isSeen?'<span style="opacity:.3">👁</span>':''}
+      </div></div>`;
   }).join('');
 }
 
-function openWordModal(id) {
-  const w = WORDS.find(x=>x.id===id);
-  if (!w) return;
-  currentModalWordId = id;
-  const known = getKnownSet();
-  const levelColors = {TOEIC:'#2d6a4f',TOEFL:'#1a6b9a',GRE:'#7b3fa0',GMAT:'#a05b1a'};
-  const levelBg    = {TOEIC:'#d8f3dc',TOEFL:'#dbeafe',GRE:'#f3e8ff',GMAT:'#fef3c7'};
-
-  document.getElementById('modal-word').textContent = w.word;
-  document.getElementById('modal-pos').textContent = w.pos;
-  const lvlEl = document.getElementById('modal-level');
-  lvlEl.textContent = w.level;
-  lvlEl.style.background = levelBg[w.level]||'#d8f3dc';
-  lvlEl.style.color = levelColors[w.level]||'#2d6a4f';
-  document.getElementById('modal-def').textContent = w.def;
-  document.getElementById('modal-example').textContent = '"' + w.ex + '"';
-  document.getElementById('modal-synonyms').innerHTML = w.syn.length ? `<strong>Synonyms:</strong> ${w.syn.join(', ')}` : '';
-  const kb = document.getElementById('modal-known-btn');
-  kb.textContent = known.has(id) ? 'Remove from Known ✓' : 'Mark as Known ✓';
-  kb.className = known.has(id) ? 'btn btn-danger' : 'btn btn-outline';
+function openWordModal(id){
+  const w=WORDS.find(x=>x.id===id);if(!w)return;
+  currentModalWordId=id;
+  const known=getKnownSet();
+  document.getElementById('modal-word').textContent=w.word;
+  document.getElementById('modal-pos').textContent=w.pos;
+  const md=document.getElementById('modal-diff');
+  md.textContent=w.diff;md.className='diff-badge diff-'+w.diff;
+  document.getElementById('modal-def').textContent=w.def;
+  document.getElementById('modal-example').textContent='"'+w.ex+'"';
+  document.getElementById('modal-synonyms').innerHTML=w.syn.length?'<strong>Synonyms:</strong> '+w.syn.join(', '):'';
+  document.getElementById('modal-antonyms').innerHTML=w.ant&&w.ant.length?'<strong>Antonyms:</strong> '+w.ant.join(', '):'';
+  const kb=document.getElementById('modal-known-btn');
+  kb.textContent=known.has(id)?'Remove from Known':'Mark as Known ✓';
+  kb.className=known.has(id)?'btn btn-danger':'btn btn-outline';
   document.getElementById('word-modal').classList.add('open');
 }
+function closeWordModal(e){if(!e||e.target===document.getElementById('word-modal'))document.getElementById('word-modal').classList.remove('open')}
+function toggleKnown(){const known=getKnownSet();if(known.has(currentModalWordId))known.delete(currentModalWordId);else known.add(currentModalWordId);save(K.known,[...known]);openWordModal(currentModalWordId);renderWordList()}
 
-function closeWordModal(e) {
-  if (!e || e.target===document.getElementById('word-modal')) {
-    document.getElementById('word-modal').classList.remove('open');
-  }
-}
-
-function toggleKnown() {
-  const known = getKnownSet();
-  if (known.has(currentModalWordId)) known.delete(currentModalWordId);
-  else known.add(currentModalWordId);
-  save(K.known, [...known]);
-  openWordModal(currentModalWordId);
-  renderWordList();
-}
-
-// ════════════════════════════════════════════════════════════════
-// STATS SCREEN
-// ════════════════════════════════════════════════════════════════
-function refreshStats() {
-  const sessions = getSessions();
-  const seen = getSeenSet();
-  const streak = getStreak();
-  const best = load(K.bestStreak, streak.count);
-
-  document.getElementById('stats-streak').textContent = streak.count;
-  document.getElementById('stats-best').textContent = Math.max(best, streak.count);
-  document.getElementById('stats-total-words').textContent = seen.size;
-
-  // Sessions list
-  const sl = document.getElementById('sessions-list');
-  if (sessions.length===0) {
-    sl.innerHTML = `<div class="empty-state"><div class="es-icon">📊</div><div>No sessions yet.<br>Complete your first quiz!</div></div>`;
-  } else {
-    sl.innerHTML = sessions.slice(0,10).map(s=>{
-      const pct = Math.round(s.score/s.total*100);
-      const color = pct>=70?'var(--primary)':pct>=50?'var(--gold)':'var(--red)';
-      return `<div class="session-item">
-        <div class="si-left">
-          <div class="si-date">${s.date}</div>
-          <div class="si-level">${s.level==='ALL'?'All Levels':s.level}</div>
-        </div>
-        <div class="si-score" style="color:${color}">${s.score}/${s.total}</div>
-      </div>`;
-    }).join('');
-  }
-
-  // Canvas chart
+// ════════════════════════════════════════════════════════════
+// STATS
+// ════════════════════════════════════════════════════════════
+function refreshStats(){
+  const sessions=getSessions(),seen=getSeenSet(),streak=getStreak();
+  const best=Math.max(load(K.best,0),streak.count);
+  document.getElementById('stats-streak').textContent=streak.count;
+  document.getElementById('stats-best').textContent=best;
+  document.getElementById('stats-total-words').textContent=seen.size;
+  const sl=document.getElementById('sessions-list');
+  if(!sessions.length){sl.innerHTML='<div class="empty-state"><div class="es-icon">📊</div><div>No sessions yet.<br>Complete your first quiz!</div></div>';return}
+  const typeIcon={definition:'🔤',synonym:'🔄',antonym:'↔',analogy:'🔗'};
+  sl.innerHTML=sessions.slice(0,10).map(s=>{
+    const pct=Math.round(s.score/s.total*100);
+    const col=pct>=70?'var(--primary)':pct>=50?'var(--gold)':'var(--red)';
+    return`<div class="session-item"><div class="si-left"><div class="si-date">${s.date}</div>
+      <div class="si-info">${DIFF_LABELS[s.diff]||s.diff} · ${typeIcon[s.type]||'🔤'} ${s.type||'Definition'}</div></div>
+      <div class="si-score" style="color:${col}">${s.score}/${s.total}</div></div>`;
+  }).join('');
   drawStatsChart(sessions);
 }
 
-function drawStatsChart(sessions) {
-  const canvas = document.getElementById('stats-canvas');
-  const dpr = window.devicePixelRatio || 1;
-  const W = canvas.parentElement.clientWidth - 32;
-  const H = 140;
-  canvas.width = W * dpr; canvas.height = H * dpr;
-  canvas.style.width = W+'px'; canvas.style.height = H+'px';
-  const ctx = canvas.getContext('2d');
-  ctx.scale(dpr, dpr);
-
-  const levels = ['TOEIC','TOEFL','GRE','GMAT'];
-  const colors = ['#52b788','#1a6b9a','#7b3fa0','#a05b1a'];
-  const stats = {};
-  levels.forEach(l=>stats[l]={q:0,c:0});
-
-  sessions.forEach(s=>{
-    const lvl = s.level==='ALL' ? null : s.level;
-    if (lvl && stats[lvl]) { stats[lvl].q+=s.total; stats[lvl].c+=s.score; }
-    else if (!lvl) {
-      // For ALL sessions, can't split by level
-    }
-  });
-
+function drawStatsChart(sessions){
+  const canvas=document.getElementById('stats-canvas');
+  const dpr=window.devicePixelRatio||1;
+  const W=canvas.parentElement.clientWidth-32,H=140;
+  canvas.width=W*dpr;canvas.height=H*dpr;
+  canvas.style.width=W+'px';canvas.style.height=H+'px';
+  const ctx=canvas.getContext('2d');ctx.scale(dpr,dpr);
+  const diffs=['Easy','Medium','Hard'];
+  const colors=['#52b788','#1a6b9a','#7b3fa0'];
+  const stats={};diffs.forEach(d=>stats[d]={q:0,c:0});
+  sessions.forEach(s=>{const d=s.diff;if(d&&d!=='ALL'&&stats[d]){stats[d].q+=s.total;stats[d].c+=s.score}});
   const pad={left:36,right:10,top:10,bottom:30};
-  const bw = (W-pad.left-pad.right)/levels.length;
-  const bh = H-pad.top-pad.bottom;
-
-  // Grid lines
-  ctx.strokeStyle='#e8f5e9'; ctx.lineWidth=1;
+  const bw=(W-pad.left-pad.right)/diffs.length,bh=H-pad.top-pad.bottom;
+  ctx.strokeStyle='#e8f5e9';ctx.lineWidth=1;
   [0,25,50,75,100].forEach(p=>{
-    const y = pad.top + bh - (p/100)*bh;
-    ctx.beginPath(); ctx.moveTo(pad.left,y); ctx.lineTo(W-pad.right,y); ctx.stroke();
-    ctx.fillStyle='#6b8f71'; ctx.font=`600 10px Nunito,sans-serif`;
-    ctx.textAlign='right'; ctx.fillText(p+'%', pad.left-4, y+4);
+    const y=pad.top+bh-(p/100)*bh;
+    ctx.beginPath();ctx.moveTo(pad.left,y);ctx.lineTo(W-pad.right,y);ctx.stroke();
+    ctx.fillStyle='#6b8f71';ctx.font='600 10px Nunito,sans-serif';ctx.textAlign='right';
+    ctx.fillText(p+'%',pad.left-4,y+4);
   });
-
-  levels.forEach((l,i)=>{
-    const s = stats[l];
-    const pct = s.q>0 ? s.c/s.q : 0;
-    const x = pad.left + i*bw + bw*0.15;
-    const bWidth = bw*0.7;
-    const barH = Math.max(4, pct*bh);
-    const y = pad.top + bh - barH;
-
-    ctx.fillStyle = colors[i];
-    ctx.beginPath();
-    ctx.roundRect(x, y, bWidth, barH, 4);
-    ctx.fill();
-
-    // Label
-    ctx.fillStyle='#1b3a2f'; ctx.font='700 11px Nunito,sans-serif'; ctx.textAlign='center';
-    ctx.fillText(l, x+bWidth/2, H-pad.bottom+14);
-
-    // Pct on bar
-    if (s.q>0) {
-      ctx.fillStyle='#fff'; ctx.font='700 10px Nunito,sans-serif';
-      ctx.fillText(Math.round(pct*100)+'%', x+bWidth/2, y+13);
-    } else {
-      ctx.fillStyle='var(--muted)'; ctx.font='10px Nunito,sans-serif';
-      ctx.fillText('—', x+bWidth/2, pad.top+bh/2);
-    }
+  diffs.forEach((d,i)=>{
+    const st=stats[d],pct=st.q>0?st.c/st.q:0;
+    const x=pad.left+i*bw+bw*.15,bWidth=bw*.7,barH=Math.max(4,pct*bh),y=pad.top+bh-barH;
+    ctx.fillStyle=colors[i];
+    ctx.beginPath();ctx.roundRect(x,y,bWidth,barH,4);ctx.fill();
+    ctx.fillStyle='#1b3a2f';ctx.font='700 11px Nunito,sans-serif';ctx.textAlign='center';
+    ctx.fillText(d,x+bWidth/2,H-pad.bottom+14);
+    if(st.q>0){ctx.fillStyle='#fff';ctx.font='700 10px Nunito,sans-serif';ctx.fillText(Math.round(pct*100)+'%',x+bWidth/2,y+13)}
+    else{ctx.fillStyle='#6b8f71';ctx.font='10px Nunito,sans-serif';ctx.fillText('—',x+bWidth/2,pad.top+bh/2)}
   });
 }
 
-// ════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════
 // SETTINGS
-// ════════════════════════════════════════════════════════════════
-function loadSettings() {
-  const s = getSettings();
-  document.getElementById('setting-level').value = s.level;
-  document.getElementById('setting-size').value = s.sessionSize;
-  const hasPIN = !!localStorage.getItem(K.pin);
-  document.getElementById('clear-pin-btn').style.display = hasPIN ? '' : 'none';
-  document.getElementById('pin-setting-sub').textContent = hasPIN ? 'PIN is currently active' : 'Set a 4-digit PIN to protect your progress';
+// ════════════════════════════════════════════════════════════
+function loadSettings(){
+  const s=getSettings();
+  document.getElementById('setting-diff').value=s.diff;
+  document.getElementById('setting-type').value=s.quizType;
+  document.getElementById('setting-size').value=s.sessionSize;
+  const hasPIN=!!localStorage.getItem(K.pin);
+  document.getElementById('clear-pin-btn').style.display=hasPIN?'':'none';
+  document.getElementById('pin-setting-sub').textContent=hasPIN?'PIN is currently active':'Set a 4-digit PIN to protect your progress';
 }
+function saveSetting(key,val){const s=getSettings();s[key]=val;save(K.settings,s);showToast('Saved!','success')}
+async function savePin(){const v=document.getElementById('pin-input').value.trim();if(!/^\d{4}$/.test(v)){showToast('Please enter exactly 4 digits','error');return}localStorage.setItem(K.pin,await sha256(v));document.getElementById('pin-input').value='';loadSettings();showToast('PIN set!','success')}
+function clearPin(){localStorage.removeItem(K.pin);loadSettings();showToast('PIN removed','success')}
+function confirmReset(){if(!confirm('Reset all progress? This cannot be undone.'))return;[K.sessions,K.seen,K.known,K.streak,K.best].forEach(k=>localStorage.removeItem(k));showToast('Progress reset','success');showScreen('screen-home')}
 
-function saveSetting(key, val) {
-  const s = getSettings();
-  s[key] = val;
-  save(K.settings, s);
-  showToast('Saved!','success');
-}
+// ════════════════════════════════════════════════════════════
+// TOAST & INIT
+// ════════════════════════════════════════════════════════════
+function showToast(msg,type='success'){const t=document.getElementById('toast');t.textContent=msg;t.className='show '+type;clearTimeout(t._t);t._t=setTimeout(()=>t.className='',2800)}
 
-async function savePin() {
-  const input = document.getElementById('pin-input').value.trim();
-  if (!/^\d{4}$/.test(input)) { showToast('Please enter exactly 4 digits','error'); return; }
-  const hash = await sha256(input);
-  localStorage.setItem(K.pin, hash);
-  document.getElementById('pin-input').value = '';
-  loadSettings();
-  showToast('PIN set successfully!','success');
-}
-
-function clearPin() {
-  localStorage.removeItem(K.pin);
-  loadSettings();
-  showToast('PIN removed','success');
-}
-
-function confirmReset() {
-  if (!confirm('Reset all progress? This cannot be undone.')) return;
-  [K.sessions, K.seen, K.known, K.streak, K.bestStreak].forEach(k=>localStorage.removeItem(k));
-  showToast('Progress reset','success');
-  showScreen('screen-home');
-}
-
-// ════════════════════════════════════════════════════════════════
-// TOAST
-// ════════════════════════════════════════════════════════════════
-function showToast(msg, type='success') {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className = 'show ' + type;
-  clearTimeout(t._tid);
-  t._tid = setTimeout(()=>t.className='', 2800);
-}
-
-// ════════════════════════════════════════════════════════════════
-// INIT
-// ════════════════════════════════════════════════════════════════
-(function init() {
-  const hasPIN = !!localStorage.getItem(K.pin);
-  if (hasPIN) {
-    document.getElementById('tab-bar').classList.add('hidden');
-    document.getElementById('screen-lock').classList.add('active');
-  } else {
-    showScreen('screen-home');
-  }
+(function init(){
+  if(localStorage.getItem(K.pin)){document.getElementById('tab-bar').classList.add('hidden');document.getElementById('screen-lock').classList.add('active')}
+  else showScreen('screen-home');
 })();
 </script>
 </body>
