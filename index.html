@@ -315,13 +315,6 @@ body{font-family:'Nunito',sans-serif;background:linear-gradient(180deg,#8de4ec 0
     </div>
     <div class="adv-chevron">›</div>
   </button>
-  <div class="card tip-card" id="wotd-card" style="margin-top:4px">
-    <div style="font-size:11px;font-weight:800;color:var(--primary);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">✨ Word of the Day</div>
-    <div class="tip-word" id="wotd-word">—</div>
-    <div style="margin:4px 0"><span class="diff-badge" id="wotd-badge"></span></div>
-    <div class="tip-def" id="wotd-def">—</div>
-    <div class="tip-meta" id="wotd-ex">—</div>
-  </div>
 </div>
 
 <!-- QUIZ -->
@@ -726,14 +719,6 @@ function refreshHome(){
   // Sync chip selections
   syncChips('home-diff-chips', s.diff);
   syncChips('home-type-chips', s.quizType);
-  // Word of the day
-  const pool=s.diff==='ALL'?WORDS:WORDS.filter(w=>w.diff===s.diff);
-  const wotd=pool[Math.floor(Date.now()/86400000)%pool.length];
-  document.getElementById('wotd-word').textContent=wotd.word;
-  document.getElementById('wotd-def').textContent=wotd.def;
-  document.getElementById('wotd-ex').textContent='"'+wotd.ex+'"';
-  const wb=document.getElementById('wotd-badge');
-  wb.textContent=wotd.diff;wb.className='diff-badge diff-'+wotd.diff;
 }
 function syncChips(containerId, activeVal){
   document.querySelectorAll('#'+containerId+' .home-chip').forEach(c=>{
@@ -746,7 +731,6 @@ function setHomeDiff(val, el){
   // Also sync settings screen dropdown if open
   const sel=document.getElementById('setting-diff');
   if(sel) sel.value=val;
-  // Refresh word of the day
   refreshHome();
 }
 function setHomeType(val, el){
@@ -790,9 +774,9 @@ function startAdventureStage(id){
   if(id>adv.unlocked){showToast('Complete the previous stage first!','error');return}
   adventureMode=true;
   adventureStageId=id;
-  // Override settings for adventure: always definition, 10 questions, correct difficulty
+  // Override difficulty only — keep the user's chosen quiz type
   const s=getSettings();
-  s.diff=stage.diff;s.quizType='definition';s.sessionSize=10;
+  s.diff=stage.diff;s.sessionSize=10;
   save(K.settings,s);
   startQuiz();
 }
