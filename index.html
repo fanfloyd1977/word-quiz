@@ -110,7 +110,7 @@ body{font-family:'Nunito',sans-serif;background:linear-gradient(180deg,#8de4ec 0
 .tip-card .tip-meta{font-size:11px;color:var(--muted);margin-top:6px;font-style:italic}
 
 /* ── QUIZ ── */
-#screen-quiz{padding-bottom:20px;background:var(--bg)}
+#screen-quiz{padding-bottom:calc(var(--tab-h) + env(safe-area-inset-bottom,0px) + 24px);background:var(--bg)}
 .quiz-top{background:linear-gradient(160deg,var(--sky2) 0%,var(--sky) 60%,#7dd8a8 100%);color:#fff;padding:52px 20px 20px;position:relative}
 .quiz-progress-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
 .quiz-progress-label{font-size:13px;font-weight:800;opacity:.9}
