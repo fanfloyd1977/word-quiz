@@ -709,6 +709,7 @@ function setHomeType(val, el){
 // QUIZ ENGINE
 // ════════════════════════════════════════════════════════════
 let quizWords=[],quizIdx=0,quizScore=0,quizAnswered=false,quizAnalogies=[],quizType='definition';
+let lastQuizWordIds=new Set(),lastQuizAnalogyIds=new Set();
 const LETTERS=['A','B','C','D'];
 function shuffle(a){return[...a].sort(()=>Math.random()-.5)}
 
@@ -719,13 +720,17 @@ function startQuiz(){
   if(quizType==='analogy'){
     let pool=s.diff==='ALL'?ANALOGIES:ANALOGIES.filter(a=>a.diff===s.diff);
     if(pool.length<1){showToast('No analogies for this difficulty','error');return}
-    quizAnalogies=shuffle(pool).slice(0,Math.min(s.sessionSize,pool.length));
+    const freshA=pool.filter(a=>!lastQuizAnalogyIds.has(a.a+'|'+a.c));
+    const pickA=freshA.length>=s.sessionSize?freshA:pool;
+    quizAnalogies=shuffle(pickA).slice(0,Math.min(s.sessionSize,pickA.length));
     quizWords=[];
   } else {
     let pool=s.diff==='ALL'?WORDS:WORDS.filter(w=>w.diff===s.diff);
     if(quizType==='antonym') pool=pool.filter(w=>w.ant&&w.ant.length>0);
     if(pool.length<4){showToast('Not enough words for this selection','error');return}
-    quizWords=shuffle(pool).slice(0,Math.min(s.sessionSize,pool.length));
+    const fresh=pool.filter(w=>!lastQuizWordIds.has(w.id));
+    const pick=fresh.length>=s.sessionSize?fresh:pool;
+    quizWords=shuffle(pick).slice(0,Math.min(s.sessionSize,pick.length));
     quizAnalogies=[];
   }
 
@@ -770,14 +775,19 @@ function renderWordQuestion(){
   if(quizType==='synonym'){
     qLabel='Choose the SYNONYM:';
     correct=shuffle(w.syn)[0];
-    // Distractors: random words from other entries' syn lists
+    // Distractors from other words' syn lists — exclude any that are also synonyms of this word
     const others=WORDS.filter(x=>x.id!==w.id&&x.syn.length>0);
-    pool=shuffle(others).slice(0,6).map(x=>shuffle(x.syn)[0]).filter(s=>s!==correct);
+    pool=shuffle(others).flatMap(x=>x.syn)
+      .filter(s=>s!==correct && !w.syn.includes(s))
+      .filter((s,i,a)=>a.indexOf(s)===i); // unique
   } else if(quizType==='antonym'){
     qLabel='Choose the ANTONYM:';
     correct=shuffle(w.ant)[0];
+    // Distractors from other words' ant lists — exclude any that are also antonyms of this word
     const others=WORDS.filter(x=>x.id!==w.id&&x.ant&&x.ant.length>0);
-    pool=shuffle(others).slice(0,6).map(x=>shuffle(x.ant)[0]).filter(s=>s!==correct);
+    pool=shuffle(others).flatMap(x=>x.ant)
+      .filter(s=>s!==correct && !w.ant.includes(s))
+      .filter((s,i,a)=>a.indexOf(s)===i);
   } else {
     qLabel='What does this word mean?';
     correct=w.def;
@@ -809,18 +819,20 @@ function renderAnalogy(){
 }
 
 function renderChoices(options,word,correctText){
+  const trueCorrect=correctText||options.find(o=>o.correct).text;
+  const correctLetter=LETTERS[options.findIndex(o=>o.correct)];
   const container=document.getElementById('choices-container');
   container.innerHTML='';
   options.forEach((opt,i)=>{
     const btn=document.createElement('button');
     btn.className='choice-btn';
     btn.innerHTML=`<span class="choice-letter">${LETTERS[i]}</span><span>${opt.text}</span>`;
-    btn.onclick=()=>{if(!quizAnswered)selectAnswer(btn,opt.correct,word,correctText||opt.text)};
+    btn.onclick=()=>{if(!quizAnswered)selectAnswer(btn,opt.correct,word,trueCorrect,correctLetter)};
     container.appendChild(btn);
   });
 }
 
-function selectAnswer(btn,correct,word,correctText){
+function selectAnswer(btn,correct,word,correctText,correctLetter){
   quizAnswered=true;
   document.querySelectorAll('.choice-btn').forEach(b=>b.classList.add('disabled'));
   if(correct){btn.classList.add('correct');quizScore++}
@@ -833,13 +845,22 @@ function selectAnswer(btn,correct,word,correctText){
   const fb=document.getElementById('quiz-feedback');
   document.getElementById('fb-title').textContent=correct?'✅ Correct!':'❌ Incorrect';
   if(word){
-    const synStr=word.syn.length?' | Synonyms: '+word.syn.join(', '):'';
-    const antStr=word.ant&&word.ant.length?' | Antonyms: '+word.ant.join(', '):'';
-    document.getElementById('fb-body').textContent=correct
-      ?'Well done! '+word.word+' means: '+word.def
-      :'Correct answer: '+correctText+synStr+(quizType==='antonym'?antStr:'');
+    const prefix=(!correct&&correctLetter)?'The correct answer is <b>'+correctLetter+'</b><br>':'';
+    let msg;
+    if(quizType==='synonym'){
+      msg=prefix+'Synonyms of "'+word.word+'": '+word.syn.join(', ');
+    } else if(quizType==='antonym'){
+      const antList=(word.ant&&word.ant.length)?word.ant.join(', '):'—';
+      msg=prefix+'Antonyms of "'+word.word+'": '+antList;
+    } else {
+      msg=correct
+        ?'Well done! "'+word.word+'" means: '+word.def
+        :prefix+'Correct answer: '+correctText;
+    }
+    document.getElementById('fb-body').innerHTML=msg;
   } else {
-    document.getElementById('fb-body').textContent=correct?'Great analogy reasoning!':'Correct answer: '+correctText;
+    const prefix=(!correct&&correctLetter)?'The correct answer is <b>'+correctLetter+'</b><br>':'';
+    document.getElementById('fb-body').innerHTML=correct?'Great analogy reasoning!':prefix+'Correct answer: '+correctText;
   }
   fb.className='quiz-feedback show '+(correct?'correct-fb':'wrong-fb');
   // Mark word as seen
@@ -861,6 +882,8 @@ function finishQuiz(){
   const sessions=getSessions();
   sessions.unshift({date:new Date().toLocaleDateString(),score:quizScore,total,diff:s.diff,type:quizType});
   save(K.sessions,sessions.slice(0,50));
+  lastQuizWordIds=new Set(quizWords.map(w=>w.id));
+  lastQuizAnalogyIds=new Set(quizAnalogies.map(a=>a.a+'|'+a.c));
   updateStreak();
   showScoreScreen(quizScore,total,pct);
 }
@@ -1024,10 +1047,24 @@ function confirmReset(){if(!confirm('Reset all progress? This cannot be undone.'
 // ════════════════════════════════════════════════════════════
 function showToast(msg,type='success'){const t=document.getElementById('toast');t.textContent=msg;t.className='show '+type;clearTimeout(t._t);t._t=setTimeout(()=>t.className='',2800)}
 
+function lockApp(){
+  if(!localStorage.getItem(K.pin))return;
+  pinBuffer='';updateLockDots(false);
+  document.getElementById('tab-bar').classList.add('hidden');
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('score-screen').classList.remove('active');
+  document.getElementById('screen-lock').classList.add('active');
+}
+
 (function init(){
-  if(localStorage.getItem(K.pin)){document.getElementById('tab-bar').classList.add('hidden');document.getElementById('screen-lock').classList.add('active')}
+  if(localStorage.getItem(K.pin)){lockApp()}
   else showScreen('screen-home');
 })();
+
+// Re-lock on iOS BFCache restore (page swiped back or tab reactivated)
+window.addEventListener('pageshow',e=>{if(e.persisted)lockApp()});
+// Re-lock when returning to the app from background
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')lockApp()});
 </script>
 </body>
 </html>
