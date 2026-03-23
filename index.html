@@ -37,7 +37,7 @@
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Nunito',sans-serif;background:linear-gradient(180deg,#8de4ec 0%,#b8f0d0 100%);display:flex;justify-content:center;min-height:100vh;-webkit-tap-highlight-color:transparent}
-#app{width:100%;max-width:430px;min-height:100vh;background:var(--bg);position:relative;overflow:hidden}
+#app{width:100%;max-width:430px;min-height:100vh;background:var(--bg);position:relative;overflow-y:auto;overflow-x:hidden}
 
 .screen{display:none;flex-direction:column;min-height:100vh;padding-bottom:calc(var(--tab-h) + env(safe-area-inset-bottom,0px) + 12px);animation:fadeSlideIn .22s ease}
 .screen.active{display:flex}
@@ -98,6 +98,10 @@ body{font-family:'Nunito',sans-serif;background:linear-gradient(180deg,#8de4ec 0
 .stat-mini{background:var(--cream);border-radius:16px;padding:14px 10px;text-align:center;box-shadow:var(--shadow-sm);border:1.5px solid rgba(178,224,200,.5)}
 .stat-mini .val{font-size:24px;font-weight:900;color:var(--sky2);line-height:1}
 .stat-mini .lbl{font-size:10px;color:var(--muted);margin-top:4px;font-weight:700}
+.home-chips{display:flex;flex-wrap:wrap;gap:8px}
+.home-chip{padding:7px 14px;border-radius:20px;border:2px solid var(--border);background:var(--bg);font-size:12px;font-weight:800;color:var(--muted);cursor:pointer;transition:all .15s;-webkit-tap-highlight-color:transparent}
+.home-chip:active{transform:scale(.95)}
+.home-chip.active{background:linear-gradient(135deg,var(--sky),var(--meadow));border-color:transparent;color:#fff;box-shadow:0 3px 10px rgba(91,200,212,.35)}
 .tip-card{background:linear-gradient(135deg,#e0f7e9,#d6eeff);border-left:4px solid var(--meadow)}
 .tip-card .tip-word{font-family:'Lora',serif;font-size:18px;font-weight:700;color:var(--text)}
 .tip-card .tip-def{font-size:13px;color:var(--text);margin-top:4px;line-height:1.5}
@@ -137,7 +141,7 @@ body{font-family:'Nunito',sans-serif;background:linear-gradient(180deg,#8de4ec 0
 .quiz-feedback.wrong-fb{background:var(--red-light);color:#b71c1c;border-color:var(--red)}
 .quiz-feedback .fb-title{font-weight:900;margin-bottom:4px;font-size:15px}
 
-.quiz-next-btn{position:fixed;bottom:calc(var(--tab-h) + env(safe-area-inset-bottom,0px) + 10px);left:50%;transform:translateX(-50%);width:calc(100% - 32px);max-width:398px;z-index:90;display:none}
+.quiz-next-btn{margin:14px 16px 24px;display:none}
 .quiz-next-btn.show{display:block}
 
 /* ── SCORE ── */
@@ -256,12 +260,21 @@ body{font-family:'Nunito',sans-serif;background:linear-gradient(180deg,#8de4ec 0
   </div>
   <div style="margin:14px 16px 0">
     <div class="card" style="margin:0">
-      <div style="font-size:13px;font-weight:700;color:var(--muted);margin-bottom:10px">TODAY'S CHALLENGE</div>
-      <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
-        <span class="diff-badge" id="home-diff-badge">📚 All</span>
-        <span class="diff-badge diff-Easy" id="home-type-badge">🔤 Definition</span>
+      <div style="font-size:11px;font-weight:800;color:var(--sky2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">Difficulty</div>
+      <div class="home-chips" id="home-diff-chips">
+        <div class="home-chip" data-val="ALL"    onclick="setHomeDiff('ALL',this)">📚 All</div>
+        <div class="home-chip" data-val="Easy"   onclick="setHomeDiff('Easy',this)">🟢 Easy</div>
+        <div class="home-chip" data-val="Medium" onclick="setHomeDiff('Medium',this)">🔵 Medium</div>
+        <div class="home-chip" data-val="Hard"   onclick="setHomeDiff('Hard',this)">🟣 Hard</div>
       </div>
-      <button class="btn btn-primary" onclick="startQuiz()">Start Quiz 📝</button>
+      <div style="font-size:11px;font-weight:800;color:var(--sky2);text-transform:uppercase;letter-spacing:.6px;margin:12px 0 8px">Quiz Type</div>
+      <div class="home-chips" id="home-type-chips">
+        <div class="home-chip" data-val="definition" onclick="setHomeType('definition',this)">🔤 Definition</div>
+        <div class="home-chip" data-val="synonym"    onclick="setHomeType('synonym',this)">🔄 Synonym</div>
+        <div class="home-chip" data-val="antonym"    onclick="setHomeType('antonym',this)">↔ Antonym</div>
+        <div class="home-chip" data-val="analogy"    onclick="setHomeType('analogy',this)">🔗 Analogy</div>
+      </div>
+      <button class="btn btn-primary" style="margin-top:16px" onclick="startQuiz()">Start Quiz 📝</button>
     </div>
   </div>
   <div class="card tip-card" id="wotd-card" style="margin-top:4px">
@@ -655,12 +668,11 @@ function refreshHome(){
   document.getElementById('home-streak').textContent='🔥 '+streak.count+' day'+(streak.count!==1?'s':'');
   document.getElementById('home-seen').textContent=seen.size;
   document.getElementById('home-sessions').textContent=sessions.length;
-  let tq=0,tc=0;sessions.forEach(s=>{tq+=s.total;tc+=s.score});
+  let tq=0,tc=0;sessions.forEach(x=>{tq+=x.total;tc+=x.score});
   document.getElementById('home-accuracy').textContent=tq>0?Math.round(tc/tq*100)+'%':'—';
-  const db=document.getElementById('home-diff-badge');
-  db.textContent=DIFF_LABELS[s.diff]||s.diff;
-  db.className='diff-badge '+(DIFF_CLASSES[s.diff]||'');
-  document.getElementById('home-type-badge').textContent=TYPE_LABELS[s.quizType]||s.quizType;
+  // Sync chip selections
+  syncChips('home-diff-chips', s.diff);
+  syncChips('home-type-chips', s.quizType);
   // Word of the day
   const pool=s.diff==='ALL'?WORDS:WORDS.filter(w=>w.diff===s.diff);
   const wotd=pool[Math.floor(Date.now()/86400000)%pool.length];
@@ -669,6 +681,26 @@ function refreshHome(){
   document.getElementById('wotd-ex').textContent='"'+wotd.ex+'"';
   const wb=document.getElementById('wotd-badge');
   wb.textContent=wotd.diff;wb.className='diff-badge diff-'+wotd.diff;
+}
+function syncChips(containerId, activeVal){
+  document.querySelectorAll('#'+containerId+' .home-chip').forEach(c=>{
+    c.classList.toggle('active', c.dataset.val===activeVal);
+  });
+}
+function setHomeDiff(val, el){
+  saveSetting('diff', val, true);
+  syncChips('home-diff-chips', val);
+  // Also sync settings screen dropdown if open
+  const sel=document.getElementById('setting-diff');
+  if(sel) sel.value=val;
+  // Refresh word of the day
+  refreshHome();
+}
+function setHomeType(val, el){
+  saveSetting('quizType', val, true);
+  syncChips('home-type-chips', val);
+  const sel=document.getElementById('setting-type');
+  if(sel) sel.value=val;
 }
 
 // ════════════════════════════════════════════════════════════
@@ -980,7 +1012,7 @@ function loadSettings(){
   document.getElementById('clear-pin-btn').style.display=hasPIN?'':'none';
   document.getElementById('pin-setting-sub').textContent=hasPIN?'PIN is currently active':'Set a 4-digit PIN to protect your progress';
 }
-function saveSetting(key,val){const s=getSettings();s[key]=val;save(K.settings,s);showToast('Saved!','success')}
+function saveSetting(key,val,silent){const s=getSettings();s[key]=val;save(K.settings,s);if(!silent)showToast('Saved!','success')}
 async function savePin(){const v=document.getElementById('pin-input').value.trim();if(!/^\d{4}$/.test(v)){showToast('Please enter exactly 4 digits','error');return}localStorage.setItem(K.pin,await sha256(v));document.getElementById('pin-input').value='';loadSettings();showToast('PIN set!','success')}
 function clearPin(){localStorage.removeItem(K.pin);loadSettings();showToast('PIN removed','success')}
 function confirmReset(){if(!confirm('Reset all progress? This cannot be undone.'))return;[K.sessions,K.seen,K.known,K.streak,K.best].forEach(k=>localStorage.removeItem(k));showToast('Progress reset','success');showScreen('screen-home')}
