@@ -674,8 +674,8 @@ function getSettings(){return Object.assign({diff:'ALL',quizType:'definition',se
 // ════════════════════════════════════════════════════════════
 let pinBuffer='';
 async function sha256(m){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(m));return Array.from(new Uint8Array(b)).map(b=>b.toString(16).padStart(2,'0')).join('')}
-function pinKey(d){if(pinBuffer.length>=4)return;pinBuffer+=d;updateLockDots();if(pinBuffer.length===4)setTimeout(checkPin,80)}
-function pinDel(){pinBuffer=pinBuffer.slice(0,-1);updateLockDots()}
+function pinKey(d){if(pinBuffer.length>=4)return;actx().resume();playClick();pinBuffer+=d;updateLockDots();if(pinBuffer.length===4)setTimeout(checkPin,80)}
+function pinDel(){actx().resume();playClick();pinBuffer=pinBuffer.slice(0,-1);updateLockDots()}
 function updateLockDots(err){for(let i=0;i<4;i++){const e=document.getElementById('ld'+i);e.classList.toggle('filled',i<pinBuffer.length);e.classList.toggle('error',!!err)}}
 async function checkPin(){const h=await sha256(pinBuffer);if(h===localStorage.getItem(K.pin)){pinBuffer='';unlockApp()}else{updateLockDots(true);setTimeout(()=>{pinBuffer='';updateLockDots(false)},700)}}
 function unlockApp(){
