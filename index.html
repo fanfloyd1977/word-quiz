@@ -487,6 +487,7 @@ input:checked+.toggle-slider::before{transform:translateX(22px)}
   <div class="tab" id="tab-settings" onclick="showScreen('screen-settings')"><div class="tab-icon">⚙️</div><div>Settings</div></div>
 </div>
 <div id="toast"></div>
+<audio id="bg-music" src="music.wav" loop preload="auto" style="display:none"></audio>
 
 <script>
 // ════════════════════════════════════════════════════════════
@@ -1300,36 +1301,16 @@ function playWrong(){
   o.start(c.currentTime);o.stop(c.currentTime+0.2);
 }
 
-// Background music — gentle pentatonic arpeggio
-const _MUSIC_FREQS=[261.63,293.66,329.63,392.00,440.00,523.25,587.33];
-const _MUSIC_PAT=[0,2,4,6,4,2,1,3,5,3,1,0];
-let _musicStep=0,_musicRunning=false,_musicTimer=null;
+// Background music — WAV file via HTML5 Audio
+function _bgAudio(){return document.getElementById('bg-music')}
 function startMusic(){
-  if(_musicRunning)return;
-  _musicRunning=true;
-  _musicTick();
+  const a=_bgAudio();if(!a)return;
+  a.volume=0.35;
+  a.play().catch(()=>{});
 }
 function stopMusic(){
-  _musicRunning=false;
-  if(_musicTimer)clearTimeout(_musicTimer);
-}
-function _musicTick(){
-  if(!_musicRunning||!getSettings().music)return;
-  const c=actx();
-  const baseFreq=_MUSIC_FREQS[_MUSIC_PAT[_musicStep%_MUSIC_PAT.length]];
-  // Play two gentle layers: melody + soft bass
-  [[baseFreq,0.07],[baseFreq/2,0.04]].forEach(([freq,vol])=>{
-    const o=c.createOscillator(),g=c.createGain();
-    o.connect(g);g.connect(c.destination);
-    o.type='sine';o.frequency.value=freq;
-    g.gain.setValueAtTime(0,c.currentTime);
-    g.gain.linearRampToValueAtTime(vol,c.currentTime+0.1);
-    g.gain.linearRampToValueAtTime(vol*0.6,c.currentTime+0.35);
-    g.gain.linearRampToValueAtTime(0,c.currentTime+0.55);
-    o.start(c.currentTime);o.stop(c.currentTime+0.6);
-  });
-  _musicStep++;
-  _musicTimer=setTimeout(_musicTick,520);
+  const a=_bgAudio();if(!a)return;
+  a.pause();a.currentTime=0;
 }
 function toggleMusic(on){
   saveSetting('music',on);
