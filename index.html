@@ -487,7 +487,6 @@ input:checked+.toggle-slider::before{transform:translateX(22px)}
   <div class="tab" id="tab-settings" onclick="showScreen('screen-settings')"><div class="tab-icon">⚙️</div><div>Settings</div></div>
 </div>
 <div id="toast"></div>
-<audio id="bg-music" src="music.wav" loop preload="auto" style="display:none"></audio>
 
 <script>
 // ════════════════════════════════════════════════════════════
@@ -1301,17 +1300,54 @@ function playWrong(){
   o.start(c.currentTime);o.stop(c.currentTime+0.2);
 }
 
-// Background music — WAV file via HTML5 Audio
-function _bgAudio(){return document.getElementById('bg-music')}
-function startMusic(){
-  const a=_bgAudio();if(!a)return;
-  a.volume=0.35;
-  a.play().catch(()=>{});
+// Background music — Web Audio API BufferSource (sample-accurate looping, no gap)
+let _musicBuf=null,_musicSrc=null,_musicGain=null,_musicLoading=false;
+
+async function _loadMusicBuf(){
+  if(_musicBuf)return _musicBuf;
+  if(_musicLoading)return null;
+  _musicLoading=true;
+  try{
+    const res=await fetch('music.wav');
+    const ab=await res.arrayBuffer();
+    _musicBuf=await actx().decodeAudioData(ab);
+  }catch(e){console.warn('Music load failed',e)}
+  _musicLoading=false;
+  return _musicBuf;
 }
+
+async function startMusic(){
+  if(_musicSrc)return;
+  const buf=await _loadMusicBuf();
+  if(!buf)return;
+  const c=actx();
+  // Crossfade gain — fade in to avoid click on start
+  _musicGain=c.createGain();
+  _musicGain.gain.setValueAtTime(0,c.currentTime);
+  _musicGain.gain.linearRampToValueAtTime(0.35,c.currentTime+1.5);
+  _musicGain.connect(c.destination);
+  // BufferSource with seamless loop
+  _musicSrc=c.createBufferSource();
+  _musicSrc.buffer=buf;
+  _musicSrc.loop=true;
+  // Set loopEnd slightly before the buffer end to find a clean zero-crossing
+  const dur=buf.duration;
+  _musicSrc.loopEnd=dur-0.05;
+  _musicSrc.connect(_musicGain);
+  _musicSrc.start(0);
+}
+
 function stopMusic(){
-  const a=_bgAudio();if(!a)return;
-  a.pause();a.currentTime=0;
+  if(!_musicGain||!_musicSrc)return;
+  const c=actx();
+  // Fade out before stopping to avoid click
+  _musicGain.gain.setValueAtTime(_musicGain.gain.value,c.currentTime);
+  _musicGain.gain.linearRampToValueAtTime(0,c.currentTime+1.0);
+  const src=_musicSrc;const gn=_musicGain;
+  setTimeout(()=>{try{src.stop()}catch(e){}gn.disconnect()},1100);
+  _musicSrc=null;_musicGain=null;
 }
+
 function toggleMusic(on){
   saveSetting('music',on);
   if(on)startMusic();else stopMusic();
