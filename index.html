@@ -219,6 +219,13 @@ body{font-family:'Nunito',sans-serif;background:linear-gradient(180deg,#8de4ec 0
 .pin-setup-row input:focus{border-color:var(--sky)}
 .empty-state{text-align:center;padding:48px 20px;color:var(--muted);font-size:15px}
 .empty-state .es-icon{font-size:48px;margin-bottom:12px}
+/* ── TOGGLE SWITCH ── */
+.toggle-switch{position:relative;display:inline-block;width:50px;height:28px;flex-shrink:0}
+.toggle-switch input{opacity:0;width:0;height:0;position:absolute}
+.toggle-slider{position:absolute;cursor:pointer;inset:0;background:#ccc;border-radius:28px;transition:.3s}
+.toggle-slider::before{content:'';position:absolute;height:22px;width:22px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.3s;box-shadow:0 1px 4px rgba(0,0,0,.2)}
+input:checked+.toggle-slider{background:var(--meadow)}
+input:checked+.toggle-slider::before{transform:translateX(22px)}
 /* ── ADVENTURE ── */
 .adv-hero{background:linear-gradient(160deg,#1a6b3a 0%,var(--meadow2) 45%,var(--sky) 100%);padding:52px 20px 20px;color:#fff;text-align:center}
 .adv-hero h2{font-family:'Lora',serif;font-size:20px;font-weight:700}
@@ -428,33 +435,21 @@ body{font-family:'Nunito',sans-serif;background:linear-gradient(180deg,#8de4ec 0
 <div id="screen-settings" class="screen">
   <div class="settings-hero"><h2>⚙️ Settings</h2></div>
 
-  <div class="settings-section-label">Quiz Preferences</div>
+  <div class="settings-section-label">Sound</div>
   <div class="settings-card">
     <div class="setting-row">
-      <div><div class="sr-label">Difficulty</div><div class="sr-sub">Filter words by difficulty level</div></div>
-      <select id="setting-diff" onchange="saveSetting('diff',this.value)">
-        <option value="ALL">All Levels</option>
-        <option value="Easy">🟢 Easy</option>
-        <option value="Medium">🔵 Medium</option>
-        <option value="Hard">🟣 Hard</option>
-      </select>
+      <div><div class="sr-label">🎵 Background Music</div><div class="sr-sub">Ambient melody while you play</div></div>
+      <label class="toggle-switch">
+        <input type="checkbox" id="setting-music" onchange="toggleMusic(this.checked)">
+        <span class="toggle-slider"></span>
+      </label>
     </div>
     <div class="setting-row">
-      <div><div class="sr-label">Quiz Type</div><div class="sr-sub">What kind of questions to ask</div></div>
-      <select id="setting-type" onchange="saveSetting('quizType',this.value)">
-        <option value="definition">🔤 Definition</option>
-        <option value="synonym">🔄 Synonym</option>
-        <option value="antonym">↔️ Antonym</option>
-        <option value="analogy">🔗 Analogy</option>
-      </select>
-    </div>
-    <div class="setting-row">
-      <div><div class="sr-label">Questions per Session</div><div class="sr-sub">How many questions per quiz</div></div>
-      <select id="setting-size" onchange="saveSetting('sessionSize',parseInt(this.value))">
-        <option value="5">5</option>
-        <option value="10" selected>10</option>
-        <option value="20">20</option>
-      </select>
+      <div><div class="sr-label">🔊 Sound Effects</div><div class="sr-sub">Click and answer feedback sounds</div></div>
+      <label class="toggle-switch">
+        <input type="checkbox" id="setting-sound" onchange="saveSetting('sound',this.checked)">
+        <span class="toggle-slider"></span>
+      </label>
     </div>
   </div>
 
@@ -672,7 +667,7 @@ function getSessions(){return load(K.sessions,[])}
 function getSeenSet(){return new Set(load(K.seen,[]))}
 function getKnownSet(){return new Set(load(K.known,[]))}
 function getStreak(){return load(K.streak,{count:0,lastDate:''})}
-function getSettings(){return Object.assign({diff:'ALL',quizType:'definition',sessionSize:10},load(K.settings,{}))}
+function getSettings(){return Object.assign({diff:'ALL',quizType:'definition',sessionSize:10,music:false,sound:true},load(K.settings,{}))}
 
 // ════════════════════════════════════════════════════════════
 // PIN
@@ -683,7 +678,7 @@ function pinKey(d){if(pinBuffer.length>=4)return;pinBuffer+=d;updateLockDots();i
 function pinDel(){pinBuffer=pinBuffer.slice(0,-1);updateLockDots()}
 function updateLockDots(err){for(let i=0;i<4;i++){const e=document.getElementById('ld'+i);e.classList.toggle('filled',i<pinBuffer.length);e.classList.toggle('error',!!err)}}
 async function checkPin(){const h=await sha256(pinBuffer);if(h===localStorage.getItem(K.pin)){pinBuffer='';unlockApp()}else{updateLockDots(true);setTimeout(()=>{pinBuffer='';updateLockDots(false)},700)}}
-function unlockApp(){document.getElementById('tab-bar').classList.remove('hidden');showScreen('screen-home')}
+function unlockApp(){document.getElementById('tab-bar').classList.remove('hidden');showScreen('screen-home');if(getSettings().music)startMusic();}
 
 // ════════════════════════════════════════════════════════════
 // NAVIGATION
@@ -728,16 +723,11 @@ function syncChips(containerId, activeVal){
 function setHomeDiff(val, el){
   saveSetting('diff', val, true);
   syncChips('home-diff-chips', val);
-  // Also sync settings screen dropdown if open
-  const sel=document.getElementById('setting-diff');
-  if(sel) sel.value=val;
   refreshHome();
 }
 function setHomeType(val, el){
   saveSetting('quizType', val, true);
   syncChips('home-type-chips', val);
-  const sel=document.getElementById('setting-type');
-  if(sel) sel.value=val;
 }
 
 // ════════════════════════════════════════════════════════════
@@ -1008,7 +998,7 @@ function renderChoices(options,word,correctText){
     const btn=document.createElement('button');
     btn.className='choice-btn';
     btn.innerHTML=`<span class="choice-letter">${LETTERS[i]}</span><span>${opt.text}</span>`;
-    btn.onclick=()=>{if(!quizAnswered)selectAnswer(btn,opt.correct,word,trueCorrect,correctLetter)};
+    btn.onclick=()=>{if(!quizAnswered){playClick();selectAnswer(btn,opt.correct,word,trueCorrect,correctLetter)}};
     container.appendChild(btn);
   });
 }
@@ -1016,9 +1006,9 @@ function renderChoices(options,word,correctText){
 function selectAnswer(btn,correct,word,correctText,correctLetter){
   quizAnswered=true;
   document.querySelectorAll('.choice-btn').forEach(b=>b.classList.add('disabled'));
-  if(correct){btn.classList.add('correct');quizScore++}
+  if(correct){btn.classList.add('correct');quizScore++;playCorrect();}
   else{
-    btn.classList.add('wrong');
+    btn.classList.add('wrong');playWrong();
     document.querySelectorAll('.choice-btn').forEach(b=>{
       if(b.querySelector('span:last-child').textContent===correctText)b.classList.add('reveal-correct');
     });
@@ -1273,13 +1263,86 @@ function drawStatsChart(sessions){
 }
 
 // ════════════════════════════════════════════════════════════
+// SOUND & MUSIC
+// ════════════════════════════════════════════════════════════
+let _actx=null;
+function actx(){if(!_actx)_actx=new(window.AudioContext||window.webkitAudioContext)();if(_actx.state==='suspended')_actx.resume();return _actx}
+
+function playClick(){
+  if(!getSettings().sound)return;
+  const c=actx(),o=c.createOscillator(),g=c.createGain();
+  o.connect(g);g.connect(c.destination);
+  o.type='sine';o.frequency.value=600;
+  g.gain.setValueAtTime(0.15,c.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+0.07);
+  o.start(c.currentTime);o.stop(c.currentTime+0.07);
+}
+function playCorrect(){
+  if(!getSettings().sound)return;
+  const c=actx();
+  [523,659,784].forEach((f,i)=>{
+    const o=c.createOscillator(),g=c.createGain();
+    o.connect(g);g.connect(c.destination);
+    o.type='sine';o.frequency.value=f;
+    const t=c.currentTime+i*0.1;
+    g.gain.setValueAtTime(0.18,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.22);
+    o.start(t);o.stop(t+0.22);
+  });
+}
+function playWrong(){
+  if(!getSettings().sound)return;
+  const c=actx(),o=c.createOscillator(),g=c.createGain();
+  o.connect(g);g.connect(c.destination);
+  o.type='sawtooth';
+  o.frequency.setValueAtTime(280,c.currentTime);
+  o.frequency.exponentialRampToValueAtTime(140,c.currentTime+0.18);
+  g.gain.setValueAtTime(0.15,c.currentTime);g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+0.2);
+  o.start(c.currentTime);o.stop(c.currentTime+0.2);
+}
+
+// Background music — gentle pentatonic arpeggio
+const _MUSIC_FREQS=[261.63,293.66,329.63,392.00,440.00,523.25,587.33];
+const _MUSIC_PAT=[0,2,4,6,4,2,1,3,5,3,1,0];
+let _musicStep=0,_musicRunning=false,_musicTimer=null;
+function startMusic(){
+  if(_musicRunning)return;
+  _musicRunning=true;
+  _musicTick();
+}
+function stopMusic(){
+  _musicRunning=false;
+  if(_musicTimer)clearTimeout(_musicTimer);
+}
+function _musicTick(){
+  if(!_musicRunning||!getSettings().music)return;
+  const c=actx();
+  const baseFreq=_MUSIC_FREQS[_MUSIC_PAT[_musicStep%_MUSIC_PAT.length]];
+  // Play two gentle layers: melody + soft bass
+  [[baseFreq,0.07],[baseFreq/2,0.04]].forEach(([freq,vol])=>{
+    const o=c.createOscillator(),g=c.createGain();
+    o.connect(g);g.connect(c.destination);
+    o.type='sine';o.frequency.value=freq;
+    g.gain.setValueAtTime(0,c.currentTime);
+    g.gain.linearRampToValueAtTime(vol,c.currentTime+0.1);
+    g.gain.linearRampToValueAtTime(vol*0.6,c.currentTime+0.35);
+    g.gain.linearRampToValueAtTime(0,c.currentTime+0.55);
+    o.start(c.currentTime);o.stop(c.currentTime+0.6);
+  });
+  _musicStep++;
+  _musicTimer=setTimeout(_musicTick,520);
+}
+function toggleMusic(on){
+  saveSetting('music',on);
+  if(on)startMusic();else stopMusic();
+}
+
+// ════════════════════════════════════════════════════════════
 // SETTINGS
 // ════════════════════════════════════════════════════════════
 function loadSettings(){
   const s=getSettings();
-  document.getElementById('setting-diff').value=s.diff;
-  document.getElementById('setting-type').value=s.quizType;
-  document.getElementById('setting-size').value=s.sessionSize;
+  document.getElementById('setting-music').checked=!!s.music;
+  document.getElementById('setting-sound').checked=!!s.sound;
   const hasPIN=!!localStorage.getItem(K.pin);
   document.getElementById('clear-pin-btn').style.display=hasPIN?'':'none';
   document.getElementById('pin-setting-sub').textContent=hasPIN?'PIN is currently active':'Set a 4-digit PIN to protect your progress';
@@ -1295,6 +1358,7 @@ function confirmReset(){if(!confirm('Reset all progress? This cannot be undone.'
 function showToast(msg,type='success'){const t=document.getElementById('toast');t.textContent=msg;t.className='show '+type;clearTimeout(t._t);t._t=setTimeout(()=>t.className='',2800)}
 
 function lockApp(){
+  stopMusic();
   if(!localStorage.getItem(K.pin))return;
   pinBuffer='';updateLockDots(false);
   document.getElementById('tab-bar').classList.add('hidden');
@@ -1305,7 +1369,7 @@ function lockApp(){
 
 (function init(){
   if(localStorage.getItem(K.pin)){lockApp()}
-  else showScreen('screen-home');
+  else{showScreen('screen-home');if(getSettings().music)startMusic();}
 })();
 
 // Re-lock on iOS BFCache restore (page swiped back or tab reactivated)
