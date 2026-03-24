@@ -1321,6 +1321,9 @@ async function startMusic(){
   const buf=await _loadMusicBuf();
   if(!buf)return;
   const c=actx();
+  // Ensure AudioContext is running (may be suspended before first user gesture)
+  if(c.state==='suspended')await c.resume();
+  if(_musicSrc)return; // guard: another call may have started while we awaited
   // Crossfade gain — fade in to avoid click on start
   _musicGain=c.createGain();
   _musicGain.gain.setValueAtTime(0,c.currentTime);
@@ -1384,9 +1387,20 @@ function lockApp(){
   document.getElementById('screen-lock').classList.add('active');
 }
 
+function _armMusicOnGesture(){
+  // Browsers block audio until a user gesture — wait for first click/tap
+  const go=()=>{
+    if(getSettings().music&&!_musicSrc)startMusic();
+    document.removeEventListener('click',go);
+    document.removeEventListener('touchstart',go);
+  };
+  document.addEventListener('click',go);
+  document.addEventListener('touchstart',go);
+}
+
 (function init(){
   if(localStorage.getItem(K.pin)){lockApp()}
-  else{showScreen('screen-home');if(getSettings().music)startMusic();}
+  else{showScreen('screen-home');if(getSettings().music)_armMusicOnGesture();}
 })();
 
 // Re-lock on iOS BFCache restore (page swiped back or tab reactivated)
