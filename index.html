@@ -678,7 +678,11 @@ function pinKey(d){if(pinBuffer.length>=4)return;pinBuffer+=d;updateLockDots();i
 function pinDel(){pinBuffer=pinBuffer.slice(0,-1);updateLockDots()}
 function updateLockDots(err){for(let i=0;i<4;i++){const e=document.getElementById('ld'+i);e.classList.toggle('filled',i<pinBuffer.length);e.classList.toggle('error',!!err)}}
 async function checkPin(){const h=await sha256(pinBuffer);if(h===localStorage.getItem(K.pin)){pinBuffer='';unlockApp()}else{updateLockDots(true);setTimeout(()=>{pinBuffer='';updateLockDots(false)},700)}}
-function unlockApp(){document.getElementById('tab-bar').classList.remove('hidden');showScreen('screen-home');if(getSettings().music)startMusic();}
+function unlockApp(){
+  document.getElementById('tab-bar').classList.remove('hidden');
+  showScreen('screen-home');
+  if(getSettings().music){actx().resume();startMusic();}
+}
 
 // ════════════════════════════════════════════════════════════
 // NAVIGATION
@@ -1388,8 +1392,9 @@ function lockApp(){
 }
 
 function _armMusicOnGesture(){
-  // Browsers block audio until a user gesture — wait for first click/tap
+  // Browsers block audio until a user gesture — resume AudioContext synchronously on first tap
   const go=()=>{
+    actx().resume(); // must be synchronous within the gesture handler
     if(getSettings().music&&!_musicSrc)startMusic();
     document.removeEventListener('click',go);
     document.removeEventListener('touchstart',go);
