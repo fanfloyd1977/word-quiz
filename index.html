@@ -746,7 +746,7 @@ function setHomeType(val, el){
 let quizWords=[],quizIdx=0,quizScore=0,quizAnswered=false,quizAnalogies=[],quizType='definition';
 let lastQuizWordIds=new Set(),lastQuizAnalogyIds=new Set();
 
-let adventureMode=false,adventureStageId=null;
+let adventureMode=false,adventureStageId=null,adventurePassThreshold=80;
 
 const ADV_STAGES=[
   {id:1,diff:'Easy',  world:'🌿 The Meadow'},
@@ -760,7 +760,13 @@ const ADV_STAGES=[
   {id:9,diff:'Hard',  world:'🏔️ The Summit'},
 ];
 
-function getAdventure(){return load(K.adventure,{unlocked:1,best:{}})}
+function getAdventure(){return load(K.adventure,{cycle:1,unlocked:1,best:{},usedWords:{},history:[]})}
+function getAdvCycleConfig(cycle){
+  if(cycle<=1)return{sessionSize:10,pass:80};
+  if(cycle===2)return{sessionSize:12,pass:82};
+  if(cycle===3)return{sessionSize:15,pass:85};
+  return{sessionSize:15,pass:88};
+}
 
 function exitQuiz(){
   adventureMode=false;
@@ -772,19 +778,41 @@ function startAdventureStage(id){
   if(!stage)return;
   const adv=getAdventure();
   if(id>adv.unlocked){showToast('Complete the previous stage first!','error');return}
+  const cfg=getAdvCycleConfig(adv.cycle||1);
   adventureMode=true;
   adventureStageId=id;
-  // Override difficulty only — keep the user's chosen quiz type
+  adventurePassThreshold=cfg.pass;
+  // Build fresh word pool excluding already-used words for this stage
+  const usedIds=new Set((adv.usedWords&&adv.usedWords[id])||[]);
+  const qt=getSettings().quizType;
+  let basePool=WORDS.filter(w=>w.diff===stage.diff);
+  if(qt==='antonym')basePool=basePool.filter(w=>w.ant&&w.ant.length>0);
+  let fresh=basePool.filter(w=>!usedIds.has(w.id));
+  if(fresh.length<cfg.sessionSize){
+    // Pool exhausted — reset used list for this stage and start fresh
+    if(!adv.usedWords)adv.usedWords={};
+    adv.usedWords[id]=[];
+    save(K.adventure,adv);
+    fresh=basePool;
+  }
+  // Stash the fresh pool so startQuiz picks from it
+  adventureStageFreshPool=fresh;
+  // Override diff and size — keep quiz type
   const s=getSettings();
-  s.diff=stage.diff;s.sessionSize=10;
+  s.diff=stage.diff;s.sessionSize=cfg.sessionSize;
   save(K.settings,s);
   startQuiz();
 }
+let adventureStageFreshPool=null;
 
 function renderAdventureMap(){
   const adv=getAdventure();
-  const passedCount=Object.keys(adv.best).filter(k=>adv.best[k]>=80).length;
-  document.getElementById('adv-progress-sub').textContent=passedCount+' / 9 stages completed';
+  const cycle=adv.cycle||1;
+  const cfg=getAdvCycleConfig(cycle);
+  const thresh=cfg.pass;
+  const passedCount=Object.keys(adv.best).filter(k=>adv.best[k]>=thresh).length;
+  const cycleLabel=cycle>1?' — Cycle '+cycle:'';
+  document.getElementById('adv-progress-sub').textContent=passedCount+' / 9 stages completed'+cycleLabel+' • '+thresh+'% to pass • '+cfg.sessionSize+' questions';
   document.getElementById('adv-progress-fill').style.width=(passedCount/9*100)+'%';
 
   const worlds=[
@@ -813,7 +841,7 @@ function renderAdventureMap(){
 
     world.stages.forEach((sid,i)=>{
       const pct=adv.best[sid]||0;
-      const passed=pct>=80;
+      const passed=pct>=thresh;
       const isLocked=sid>adv.unlocked;
       const isCurrent=sid===adv.unlocked&&!passed;
 
@@ -832,7 +860,7 @@ function renderAdventureMap(){
 
       const stars=document.createElement('div');
       stars.className='adv-node-stars';
-      stars.textContent=passed?(pct>=90?'★★★':pct>=80?'★★☆':'★☆☆'):'';
+      stars.textContent=passed?(pct>=thresh+10?'★★★':pct>=thresh?'★★☆':'★☆☆'):'';
 
       const pctDiv=document.createElement('div');
       pctDiv.className='adv-node-pct';
@@ -857,7 +885,7 @@ function renderAdventureMap(){
 
   // Update home card sub text
   const homeSub=document.getElementById('adv-home-sub');
-  if(homeSub)homeSub.textContent=passedCount>0?passedCount+' / 9 stages completed':'Begin your vocabulary adventure!';
+  if(homeSub)homeSub.textContent=passedCount>0?(cycle>1?'⚡ Cycle '+cycle+' — ':'')+passedCount+' / 9 stages completed':'Begin your vocabulary adventure!';
 }
 const LETTERS=['A','B','C','D'];
 function shuffle(a){return[...a].sort(()=>Math.random()-.5)}
@@ -874,12 +902,16 @@ function startQuiz(){
     quizAnalogies=shuffle(pickA).slice(0,Math.min(s.sessionSize,pickA.length));
     quizWords=[];
   } else {
-    let pool=s.diff==='ALL'?WORDS:WORDS.filter(w=>w.diff===s.diff);
-    if(quizType==='antonym') pool=pool.filter(w=>w.ant&&w.ant.length>0);
+    let pool;
+    if(adventureStageFreshPool){pool=adventureStageFreshPool;adventureStageFreshPool=null;}
+    else{
+      pool=s.diff==='ALL'?WORDS:WORDS.filter(w=>w.diff===s.diff);
+      if(quizType==='antonym')pool=pool.filter(w=>w.ant&&w.ant.length>0);
+      const fresh=pool.filter(w=>!lastQuizWordIds.has(w.id));
+      pool=fresh.length>=s.sessionSize?fresh:pool;
+    }
     if(pool.length<4){showToast('Not enough words for this selection','error');return}
-    const fresh=pool.filter(w=>!lastQuizWordIds.has(w.id));
-    const pick=fresh.length>=s.sessionSize?fresh:pool;
-    quizWords=shuffle(pick).slice(0,Math.min(s.sessionSize,pick.length));
+    quizWords=shuffle(pool).slice(0,Math.min(s.sessionSize,pool.length));
     quizAnalogies=[];
   }
 
@@ -1033,15 +1065,26 @@ function finishQuiz(){
   save(K.sessions,sessions.slice(0,50));
   lastQuizWordIds=new Set(quizWords.map(w=>w.id));
   lastQuizAnalogyIds=new Set(quizAnalogies.map(a=>a.a+'|'+a.c));
+  let adventureCycleComplete=false;
   if(adventureMode&&adventureStageId!==null){
     const adv=getAdventure();
+    const thresh=adventurePassThreshold;
     const prev=adv.best[adventureStageId]||0;
     if(pct>prev)adv.best[adventureStageId]=pct;
-    if(pct>=80&&adventureStageId<9)adv.unlocked=Math.max(adv.unlocked,adventureStageId+1);
+    // Track used word IDs so next play gets fresh questions
+    if(!adv.usedWords)adv.usedWords={};
+    const prevUsed=adv.usedWords[adventureStageId]||[];
+    adv.usedWords[adventureStageId]=[...new Set([...prevUsed,...quizWords.map(w=>w.id)])];
+    if(pct>=thresh&&adventureStageId<9)adv.unlocked=Math.max(adv.unlocked,adventureStageId+1);
+    // Check if all 9 stages passed this cycle
+    if(pct>=thresh&&adventureStageId===9){
+      const allPassed=ADV_STAGES.every(st=>(adv.best[st.id]||0)>=thresh);
+      if(allPassed)adventureCycleComplete=true;
+    }
     save(K.adventure,adv);
   }
   updateStreak();
-  showScoreScreen(quizScore,total,pct);
+  showScoreScreen(quizScore,total,pct,adventureCycleComplete);
 }
 
 function updateStreak(){
@@ -1055,7 +1098,7 @@ function updateStreak(){
   if(s.count>best)save(K.best,s.count);
 }
 
-function showScoreScreen(score,total,pct){
+function showScoreScreen(score,total,pct,cycleComplete){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   const ss=document.getElementById('score-screen');ss.classList.add('active');
   const e=pct>=90?'🏆':pct>=70?'🎉':pct>=50?'😊':'💪';
@@ -1066,35 +1109,54 @@ function showScoreScreen(score,total,pct){
   document.getElementById('score-denom').textContent='out of '+total;
   document.getElementById('score-subtitle').textContent=t+' ('+pct+'%)';
   if(pct>=70)launchConfetti();
-  // Show correct action buttons
   const normalActions=document.getElementById('normal-score-actions');
   const advActions=document.getElementById('adv-score-actions');
   if(adventureMode){
     normalActions.style.display='none';
     advActions.style.display='';
-    const passed=pct>=80;
-    const isLast=adventureStageId===9;
+    const thresh=adventurePassThreshold;
+    const passed=pct>=thresh;
     const nextBtn=document.getElementById('adv-next-btn');
-    if(passed&&isLast){
-      nextBtn.textContent='🏆 All Done!';
-      nextBtn.onclick=()=>showScreen('screen-adventure');
-      document.getElementById('score-subtitle').textContent='🏆 You conquered all 9 stages! ('+pct+'%)';
-    } else if(passed){
-      nextBtn.textContent='Next Stage →';
+    const sub=document.getElementById('score-subtitle');
+    if(cycleComplete){
+      const adv=getAdventure();
+      const newCycle=(adv.cycle||1)+1;
+      const newCfg=getAdvCycleConfig(newCycle);
+      nextBtn.textContent='⚡ Begin Cycle '+newCycle+' →';
+      nextBtn.onclick=()=>startNextAdventureCycle();
+      sub.textContent='🏆 Cycle '+(adv.cycle||1)+' complete! Cycle '+newCycle+': '+newCfg.sessionSize+' questions, '+newCfg.pass+'% to pass';
+    } else if(passed&&adventureStageId<9){
       const nextId=adventureStageId+1;
+      nextBtn.textContent='Next Stage →';
       nextBtn.onclick=()=>startAdventureStage(nextId);
-      document.getElementById('score-subtitle').textContent='✅ Passed! Stage '+(adventureStageId+1)+' unlocked! ('+pct+'%)';
+      sub.textContent='✅ Passed! ('+pct+'%) Stage '+nextId+' unlocked!';
+    } else if(passed&&adventureStageId===9){
+      nextBtn.textContent='Map 🗺️';
+      nextBtn.onclick=()=>showScreen('screen-adventure');
+      sub.textContent='✅ Stage 9 cleared! ('+pct+'%)';
     } else {
       nextBtn.textContent='Try Again 🔄';
       const retryId=adventureStageId;
       nextBtn.onclick=()=>startAdventureStage(retryId);
-      document.getElementById('score-subtitle').textContent='Need 80% to pass. You got '+pct+'% — keep going!';
+      sub.textContent='Need '+thresh+'% to pass — you got '+pct+'%. Keep going!';
     }
     adventureMode=false;
   } else {
     normalActions.style.display='';
     advActions.style.display='none';
   }
+}
+
+function startNextAdventureCycle(){
+  const adv=getAdventure();
+  if(!adv.history)adv.history=[];
+  adv.history.push({cycle:adv.cycle||1,best:{...adv.best}});
+  adv.cycle=(adv.cycle||1)+1;
+  adv.unlocked=1;
+  adv.best={};
+  // Keep usedWords so questions stay fresh across cycles
+  save(K.adventure,adv);
+  showScreen('screen-adventure');
 }
 
 function launchConfetti(){
